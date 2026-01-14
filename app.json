@@ -4,7 +4,7 @@
     "slug": "ReactNativeRestaurantApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
+    "icon": "./src/assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
     "scheme": "reactnativerestaurantapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,16 +14,16 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage":  "./assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
-        "backgroundImage":  "./assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
-        "monochromeImage": "./assets/images/original-24706178dafd18f6f820f18c3b117e97.webp"
+        "foregroundImage":  "./src/assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
+        "backgroundImage":  "./src/assets/images/original-24706178dafd18f6f820f18c3b117e97.webp",
+        "monochromeImage": "./src/assets/images/original-24706178dafd18f6f820f18c3b117e97.webp"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon":  "./assets/images/original-24706178dafd18f6f820f18c3b117e97.webp"
+      "favicon":  "./src/assets/images/original-24706178dafd18f6f820f18c3b117e97.webp"
     },
     "plugins": [
       "expo-router",
