@@ -1,10 +1,20 @@
+export interface CardDetails {
+  cardNumber: string;
+  cardHolderName: string;
+  expiryDate: string;
+  cvv: string;
+  cardType: 'visa' | 'mastercard' | 'amex' | 'discover';
+}
+
 export interface User {
   id: string;
   name: string;
+  surname: string;
   email: string;
   password: string;
-  phone?: string;
-  address?: string;
+  phone: string;
+  address: string;
+  cardDetails?: CardDetails;
 }
 
 export interface AuthResponse {

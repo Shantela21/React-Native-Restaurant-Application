@@ -28,17 +28,30 @@ interface Props {
 export default function RegisterScreen({ navigation }: Props) {
   const [formData, setFormData] = useState({
     name: '',
+    surname: '',
     email: '',
     password: '',
     confirmPassword: '',
     phone: '',
     address: '',
+    cardDetails: {
+      cardNumber: '',
+      cardHolderName: '',
+      expiryDate: '',
+      cvv: '',
+      cardType: 'visa' as const,
+    },
   });
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.surname || !formData.email || !formData.password || !formData.phone || !formData.address) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (!formData.cardDetails.cardNumber || !formData.cardDetails.cardHolderName || !formData.cardDetails.expiryDate || !formData.cardDetails.cvv) {
+      Alert.alert('Error', 'Please fill in all card details');
       return;
     }
 
@@ -56,10 +69,12 @@ export default function RegisterScreen({ navigation }: Props) {
     try {
       const result = await authService.register({
         name: formData.name,
+        surname: formData.surname,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone || undefined,
-        address: formData.address || undefined,
+        phone: formData.phone,
+        address: formData.address,
+        cardDetails: formData.cardDetails,
       });
 
       if (result.success) {
@@ -95,9 +110,17 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <TextInput
             style={styles.input}
-            placeholder="Full Name"
+            placeholder="First Name"
             value={formData.name}
             onChangeText={(value) => updateFormData('name', value)}
+            autoCapitalize="words"
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Surname"
+            value={formData.surname}
+            onChangeText={(value) => updateFormData('surname', value)}
             autoCapitalize="words"
           />
 
@@ -128,7 +151,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <TextInput
             style={styles.input}
-            placeholder="Phone (Optional)"
+            placeholder="Phone Number"
             value={formData.phone}
             onChangeText={(value) => updateFormData('phone', value)}
             keyboardType="phone-pad"
@@ -136,11 +159,16 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Address (Optional)"
+            placeholder="Address"
             value={formData.address}
             onChangeText={(value) => updateFormData('address', value)}
             multiline
             numberOfLines={3}
+          />
+
+          <CardDetailsInput
+            value={formData.cardDetails}
+            onChange={(cardDetails) => setFormData(prev => ({ ...prev, cardDetails }))}
           />
 
           <TouchableOpacity

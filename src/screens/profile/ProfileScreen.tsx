@@ -29,8 +29,16 @@ export default function ProfileScreen({ navigation }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    surname: '',
     phone: '',
     address: '',
+    cardDetails: {
+      cardNumber: '',
+      cardHolderName: '',
+      expiryDate: '',
+      cvv: '',
+      cardType: 'visa' as 'visa' | 'mastercard' | 'amex' | 'discover',
+    },
   });
   const [loading, setLoading] = useState(false);
 
@@ -44,8 +52,16 @@ export default function ProfileScreen({ navigation }: Props) {
       setUser(currentUser);
       setFormData({
         name: currentUser.name,
-        phone: currentUser.phone || '',
-        address: currentUser.address || '',
+        surname: currentUser.surname,
+        phone: currentUser.phone,
+        address: currentUser.address,
+        cardDetails: currentUser.cardDetails || {
+          cardNumber: '',
+          cardHolderName: '',
+          expiryDate: '',
+          cvv: '',
+          cardType: (currentUser.cardDetails?.cardType as 'visa' | 'mastercard' | 'amex' | 'discover') || 'visa',
+        },
       });
     } else {
       Alert.alert('Error', 'No user logged in', [
@@ -58,8 +74,8 @@ export default function ProfileScreen({ navigation }: Props) {
   };
 
   const handleUpdateProfile = async () => {
-    if (!formData.name.trim()) {
-      Alert.alert('Error', 'Name is required');
+    if (!formData.name.trim() || !formData.surname.trim()) {
+      Alert.alert('Error', 'Name and surname are required');
       return;
     }
 
@@ -67,8 +83,10 @@ export default function ProfileScreen({ navigation }: Props) {
     try {
       const result = await authService.updateProfile({
         name: formData.name,
-        phone: formData.phone || undefined,
-        address: formData.address || undefined,
+        surname: formData.surname,
+        phone: formData.phone,
+        address: formData.address,
+        cardDetails: formData.cardDetails,
       });
 
       if (result.success) {
@@ -150,6 +168,19 @@ export default function ProfileScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.infoRow}>
+          <Text style={styles.label}>Surname:</Text>
+          {editMode ? (
+            <TextInput
+              style={styles.input}
+              value={formData.surname}
+              onChangeText={(value) => updateFormData('surname', value)}
+            />
+          ) : (
+            <Text style={styles.value}>{user.surname}</Text>
+          )}
+        </View>
+
+        <View style={styles.infoRow}>
           <Text style={styles.label}>Phone:</Text>
           {editMode ? (
             <TextInput
@@ -176,7 +207,21 @@ export default function ProfileScreen({ navigation }: Props) {
               placeholder="Enter address"
             />
           ) : (
-            <Text style={styles.value}>{user.address || 'Not provided'}</Text>
+            <Text style={styles.value}>{user.address}</Text>
+          )}
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Card Details:</Text>
+          {editMode ? (
+            <CardDetailsInput
+              value={formData.cardDetails}
+              onChange={(cardDetails) => setFormData(prev => ({ ...prev, cardDetails }))}
+            />
+          ) : (
+            <Text style={styles.value}>
+              {user.cardDetails ? `**** **** **** ${user.cardDetails.cardNumber.slice(-4)}` : 'Not provided'}
+            </Text>
           )}
         </View>
 
