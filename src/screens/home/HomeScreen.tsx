@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
     FlatList,
+    ImageBackground,
     RefreshControl,
     ScrollView,
     StatusBar,
@@ -130,15 +130,14 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   return (
-    <View style={styles.container}>
+    <ImageBackground 
+      source={require('../../assets/images/background (2).png')} 
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
       
-      <LinearGradient
-        colors={Colors.primaryGradient as any}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>Good to see you!</Text>
@@ -161,7 +160,9 @@ export default function HomeScreen({ navigation }: Props) {
             )}
           </View>
         </View>
-      </LinearGradient>
+      </View>
+
+      <View style={styles.container}>
 
       <ScrollView
         horizontal
@@ -201,13 +202,23 @@ export default function HomeScreen({ navigation }: Props) {
         }
       />
     </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   header: {
     paddingTop: 50,
