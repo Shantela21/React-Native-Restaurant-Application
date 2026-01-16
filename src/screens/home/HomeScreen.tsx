@@ -113,6 +113,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   const renderCategoryButton = (category: { key: string; label: string }) => (
     <TouchableOpacity
+      key={category.key}
       style={[
         styles.categoryButton,
         selectedCategory === category.key && styles.categoryButtonActive

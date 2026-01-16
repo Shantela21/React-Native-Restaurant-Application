@@ -1,32 +1,32 @@
 export const Colors = {
-  // Primary brand colors
-  primary: '#FF6B35',
-  primaryDark: '#E55A2B',
-  primaryLight: '#FF8A65',
+  // Primary brand colors - Modern purple/indigo theme
+  primary: '#6366F1',
+  primaryDark: '#4F46E5',
+  primaryLight: '#818CF8',
   
-  // Secondary colors
-  secondary: '#4ECDC4',
-  secondaryDark: '#3BA99C',
-  accent: '#FFE66D',
+  // Secondary colors - Teal accent
+  secondary: '#14B8A6',
+  secondaryDark: '#0D9488',
+  accent: '#F59E0B',
   
   // Neutral colors
-  background: '#FAFAFA',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
   card: '#FFFFFF',
   
   // Text colors
-  text: '#2C3E50',
-  textSecondary: '#7F8C8D',
-  textLight: '#95A5A6',
+  text: '#1E293B',
+  textSecondary: '#64748B',
+  textLight: '#94A3B8',
   
   // Status colors
-  success: '#27AE60',
-  warning: '#F39C12',
-  error: '#E74C3C',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
   
   // Gradients
-  primaryGradient: ['#FF6B35', '#FF8A65'],
-  secondaryGradient: ['#4ECDC4', '#3BA99C'],
+  primaryGradient: ['#6366F1', '#818CF8'],
+  secondaryGradient: ['#14B8A6', '#0D9488'],
   
   // Shadows
   shadow: '#000000',
