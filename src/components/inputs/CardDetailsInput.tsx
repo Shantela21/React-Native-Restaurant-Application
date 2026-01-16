@@ -33,9 +33,13 @@ const CardDetailsInput: React.FC<CardDetailsInputProps> = ({
 
   const updateField = (field: keyof CardDetails, fieldValue: string) => {
     const updatedCard = {
-      ...value,
+      cardNumber: value?.cardNumber || '',
+      cardHolderName: value?.cardHolderName || '',
+      expiryDate: value?.expiryDate || '',
+      cvv: value?.cvv || '',
+      cardType: value?.cardType || 'visa',
       [field]: fieldValue,
-    } as CardDetails;
+    };
     onChange(updatedCard);
   };
 

@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Colors } from './src/constants';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -11,7 +12,7 @@ export default function App() {
       <CartProvider>
         <View style={styles.container}>
           <AppNavigator />
-          <StatusBar style="auto" />
+          <StatusBar style="light" backgroundColor={Colors.primary} />
         </View>
       </CartProvider>
     </AuthProvider>
@@ -21,6 +22,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
 });

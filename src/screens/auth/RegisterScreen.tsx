@@ -1,15 +1,15 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { authService } from '../../services/authService';
 
@@ -17,6 +17,7 @@ type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   Profile: undefined;
+  Main: undefined;
 };
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -34,24 +35,12 @@ export default function RegisterScreen({ navigation }: Props) {
     confirmPassword: '',
     phone: '',
     address: '',
-    cardDetails: {
-      cardNumber: '',
-      cardHolderName: '',
-      expiryDate: '',
-      cvv: '',
-      cardType: 'visa' as const,
-    },
   });
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!formData.name || !formData.surname || !formData.email || !formData.password || !formData.phone || !formData.address) {
       Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    if (!formData.cardDetails.cardNumber || !formData.cardDetails.cardHolderName || !formData.cardDetails.expiryDate || !formData.cardDetails.cvv) {
-      Alert.alert('Error', 'Please fill in all card details');
       return;
     }
 
@@ -74,14 +63,13 @@ export default function RegisterScreen({ navigation }: Props) {
         password: formData.password,
         phone: formData.phone,
         address: formData.address,
-        cardDetails: formData.cardDetails,
       });
 
       if (result.success) {
         Alert.alert('Success', 'Registration successful!', [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Login'),
+            onPress: () => navigation.navigate('Main'),
           },
         ]);
       } else {
@@ -101,7 +89,7 @@ export default function RegisterScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.formContainer}>
@@ -112,7 +100,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="First Name"
             value={formData.name}
-            onChangeText={(value) => updateFormData('name', value)}
+            onChangeText={(value) => updateFormData("name", value)}
             autoCapitalize="words"
           />
 
@@ -120,7 +108,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="Surname"
             value={formData.surname}
-            onChangeText={(value) => updateFormData('surname', value)}
+            onChangeText={(value) => updateFormData("surname", value)}
             autoCapitalize="words"
           />
 
@@ -128,7 +116,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="Email"
             value={formData.email}
-            onChangeText={(value) => updateFormData('email', value)}
+            onChangeText={(value) => updateFormData("email", value)}
             keyboardType="email-address"
             autoCapitalize="none"
           />
@@ -137,7 +125,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="Password"
             value={formData.password}
-            onChangeText={(value) => updateFormData('password', value)}
+            onChangeText={(value) => updateFormData("password", value)}
             secureTextEntry
           />
 
@@ -145,7 +133,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="Confirm Password"
             value={formData.confirmPassword}
-            onChangeText={(value) => updateFormData('confirmPassword', value)}
+            onChangeText={(value) => updateFormData("confirmPassword", value)}
             secureTextEntry
           />
 
@@ -153,7 +141,7 @@ export default function RegisterScreen({ navigation }: Props) {
             style={styles.input}
             placeholder="Phone Number"
             value={formData.phone}
-            onChangeText={(value) => updateFormData('phone', value)}
+            onChangeText={(value) => updateFormData("phone", value)}
             keyboardType="phone-pad"
           />
 
@@ -161,14 +149,9 @@ export default function RegisterScreen({ navigation }: Props) {
             style={[styles.input, styles.textArea]}
             placeholder="Address"
             value={formData.address}
-            onChangeText={(value) => updateFormData('address', value)}
+            onChangeText={(value) => updateFormData("address", value)}
             multiline
             numberOfLines={3}
-          />
-
-          <CardDetailsInput
-            value={formData.cardDetails}
-            onChange={(cardDetails) => setFormData(prev => ({ ...prev, cardDetails }))}
           />
 
           <TouchableOpacity
@@ -177,17 +160,15 @@ export default function RegisterScreen({ navigation }: Props) {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Creating Account...' : 'Register'}
+              {loading ? "Creating Account..." : "Register"}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.linkButton}
-            onPress={() => navigation.navigate('Login')}
+            onPress={() => navigation.navigate("Login")}
           >
-            <Text style={styles.linkText}>
-              Already have an account? Login
-            </Text>
+            <Text style={styles.linkText}>Already have an account? Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

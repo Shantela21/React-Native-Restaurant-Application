@@ -3,19 +3,57 @@ import React, { createContext, ReactNode, useContext, useState } from 'react';
 export interface CartItem {
   id: string;
   name: string;
+  description: string;
   price: number;
-  quantity: number;
-  image?: string;
-  extras?: Array<{
+  category: 'mains' | 'starters' | 'desserts' | 'beverages' | 'alcohol' | 'burgers';
+  image: string;
+  ingredients: Array<{
+    id: string;
+    name: string;
+    removable?: boolean;
+  }>;
+  sideOptions?: Array<{
     id: string;
     name: string;
     price: number;
   }>;
+  drinkOptions?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  extras: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  quantity: number;
+  selectedSides?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  selectedDrinks?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  selectedExtras?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  customIngredients?: Array<{
+    id: string;
+    name: string;
+    removable?: boolean;
+  }>;
+  totalPrice: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
