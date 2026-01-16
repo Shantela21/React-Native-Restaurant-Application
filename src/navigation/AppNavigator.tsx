@@ -2,11 +2,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import AdminNavigator from './AdminNavigator';
 import AuthNavigator from './AuthNavigator';
 
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  Admin: undefined;
   FoodDetails: { foodId: string };
   Cart: undefined;
   Checkout: undefined;
@@ -20,7 +22,7 @@ import FoodDetailsScreen from '../screens/food/FoodDetailsScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 
 const AppNavigator: React.FC = () => {
-  const { isLoggedIn, loading } = useAuth();
+  const { isLoggedIn, loading, user } = useAuth();
 
   if (loading) {
     return null; // or a loading screen
@@ -31,6 +33,9 @@ const AppNavigator: React.FC = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
+            {user?.email === 'admin@foodie.com' && (
+              <Stack.Screen name="Admin" component={AdminNavigator} />
+            )}
             <Stack.Screen name="Main" component={HomeScreen} />
             <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
             <Stack.Screen name="Cart" component={CartScreen} />

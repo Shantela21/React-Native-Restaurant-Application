@@ -25,6 +25,7 @@ type RootStackParamList = {
   FoodDetails: { foodId: string };
   Cart: undefined;
   Checkout: undefined;
+  AdminDashboard: undefined;
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
@@ -150,12 +151,18 @@ export default function HomeScreen({ navigation }: Props) {
             >
               <Ionicons name="cart" size={24} color={Colors.surface} />
             </TouchableOpacity>
-            {user && (
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Auth')}
+            >
+              <Ionicons name="person" size={24} color={Colors.surface} />
+            </TouchableOpacity>
+            {user && user.email === 'admin@foodie.com' && (
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={() => navigation.navigate('Auth')}
+                onPress={() => navigation.navigate('AdminDashboard')}
               >
-                <Ionicons name="person" size={24} color={Colors.surface} />
+                <Ionicons name="settings" size={24} color={Colors.surface} />
               </TouchableOpacity>
             )}
           </View>
