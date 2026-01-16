@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     ViewStyle,
 } from 'react-native';
-import { Colors, Typography } from '../../constants';
+import * as constants from '../../constants';
 
 interface GradientButtonProps {
   title: string;
@@ -32,8 +32,8 @@ const GradientButton: React.FC<GradientButtonProps> = ({
   textStyle,
 }) => {
   const gradientColors = variant === 'primary' 
-    ? Colors.primaryGradient 
-    : Colors.secondaryGradient;
+    ? constants.Colors.primaryGradient 
+    : constants.Colors.secondaryGradient;
 
   const buttonStyles = [
     styles.button,
@@ -62,7 +62,7 @@ const GradientButton: React.FC<GradientButtonProps> = ({
         end={{ x: 1, y: 0 }}
       >
         {loading ? (
-          <ActivityIndicator color={Colors.surface} size="small" />
+          <ActivityIndicator color={constants.Colors.surface} size="small" />
         ) : (
           <Text style={textStyles}>{title}</Text>
         )}
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 4,
-    shadowColor: Colors.shadow,
+    shadowColor: constants.Colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   text: {
-    color: Colors.surface,
-    fontWeight: Typography.bold,
+    color: constants.Colors.surface,
+    fontWeight: constants.Typography.bold,
     textAlign: 'center',
   },
   small: {
@@ -103,13 +103,13 @@ const styles = StyleSheet.create({
     height: 56,
   },
   smallText: {
-    fontSize: Typography.sm,
+    fontSize: constants.Typography.sm,
   },
   mediumText: {
-    fontSize: Typography.base,
+    fontSize: constants.Typography.base,
   },
   largeText: {
-    fontSize: Typography.lg,
+    fontSize: constants.Typography.lg,
   },
   disabled: {
     opacity: 0.6,

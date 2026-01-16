@@ -96,139 +96,138 @@ export default function RegisterScreen({ navigation }: Props) {
     >
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
       
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <Ionicons name="restaurant" size={60} color={Colors.surface} />
-            </View>
-            <Text style={styles.appName}>Foodie</Text>
-            <Text style={styles.tagline}>Create your account</Text>
-          </View>
-        </View>
-      </View>
-
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to get started</Text>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              placeholderTextColor={Colors.textLight}
-              value={formData.name}
-              onChangeText={(value) => updateFormData("name", value)}
-              autoCapitalize="words"
-            />
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              <View style={styles.logoContainer}>
+                <View style={styles.logo}>
+                  <Ionicons name="restaurant" size={60} color={Colors.surface} />
+                </View>
+                <Text style={styles.appName}>Foodie</Text>
+                <Text style={styles.tagline}>Create your account</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Surname"
-              placeholderTextColor={Colors.textLight}
-              value={formData.surname}
-              onChangeText={(value) => updateFormData("surname", value)}
-              autoCapitalize="words"
-            />
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Sign up to get started</Text>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="First Name"
+                placeholderTextColor={Colors.textLight}
+                value={formData.name}
+                onChangeText={(value) => updateFormData("name", value)}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Surname"
+                placeholderTextColor={Colors.textLight}
+                value={formData.surname}
+                onChangeText={(value) => updateFormData("surname", value)}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={Colors.textLight}
+                value={formData.email}
+                onChangeText={(value) => updateFormData("email", value)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor={Colors.textLight}
+                value={formData.password}
+                onChangeText={(value) => updateFormData("password", value)}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                placeholderTextColor={Colors.textLight}
+                value={formData.confirmPassword}
+                onChangeText={(value) => updateFormData("confirmPassword", value)}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="call" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                placeholderTextColor={Colors.textLight}
+                value={formData.phone}
+                onChangeText={(value) => updateFormData("phone", value)}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="home" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Address"
+                placeholderTextColor={Colors.textLight}
+                value={formData.address}
+                onChangeText={(value) => updateFormData("address", value)}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleRegister}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <Text style={styles.buttonText}>Creating Account...</Text>
+              ) : (
+                <Text style={styles.buttonText}>Register</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate("Login")}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.linkText}>
+                Already have an account? <Text style={styles.linkTextBold}>Login</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={Colors.textLight}
-              value={formData.email}
-              onChangeText={(value) => updateFormData("email", value)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={Colors.textLight}
-              value={formData.password}
-              onChangeText={(value) => updateFormData("password", value)}
-              secureTextEntry
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              placeholderTextColor={Colors.textLight}
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateFormData("confirmPassword", value)}
-              secureTextEntry
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="call" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone Number"
-              placeholderTextColor={Colors.textLight}
-              value={formData.phone}
-              onChangeText={(value) => updateFormData("phone", value)}
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons name="home" size={20} color={Colors.textLight} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Address"
-              placeholderTextColor={Colors.textLight}
-              value={formData.address}
-              onChangeText={(value) => updateFormData("address", value)}
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleRegister}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <Text style={styles.buttonText}>Creating Account...</Text>
-            ) : (
-              <Text style={styles.buttonText}>Register</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate("Login")}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.linkText}>
-              Already have an account? <Text style={styles.linkTextBold}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ImageBackground>
   );
 }
@@ -286,7 +285,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   formContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 20,
     padding: 24,
     shadowColor: Colors.shadow,
@@ -303,13 +302,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 8,
-    color: Colors.text,
+    color: 'white',
   },
   subtitle: {
     fontSize: Typography.base,
     textAlign: 'center',
     marginBottom: 32,
-    color: Colors.textSecondary,
+    color: 'white',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -326,24 +325,27 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
     fontSize: Typography.base,
-    color: Colors.text,
+    color: '#000000',
+    paddingVertical: 16,
   },
   textArea: {
-    height: 80,
+    flex: 1,
+    fontSize: Typography.base,
+    color: '#000000',
+    paddingVertical: 16,
     textAlignVertical: 'top',
   },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: 'rgba(139, 69, 19, 0.8)',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
     elevation: 4,
-    shadowColor: Colors.primary,
+    shadowColor: 'rgba(139, 69, 19, 0.3)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   buttonDisabled: {
@@ -352,20 +354,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   buttonText: {
-    color: Colors.surface,
-    fontSize: Typography.base,
-    fontWeight: '700',
+    fontSize: Typography.lg,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: 'white',
   },
   linkButton: {
     alignItems: 'center',
   },
   linkText: {
-    color: Colors.textSecondary,
     fontSize: Typography.sm,
     textAlign: 'center',
+    color: 'white',
   },
   linkTextBold: {
-    color: Colors.primary,
+    fontSize: Typography.sm,
     fontWeight: '600',
+    color: 'blue',
   },
 });
