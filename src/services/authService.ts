@@ -24,7 +24,18 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private users: User[] = [];
+  private users: User[] = [
+    // Default admin user
+    {
+      id: 'admin-1',
+      name: 'Admin',
+      surname: 'User',
+      email: 'admin@foodie.com',
+      password: 'admin123',
+      phone: '+27 12 345 6789',
+      address: '123 Admin St, Admin City',
+    }
+  ];
   private currentUser: User | null = null;
 
   async register(userData: Omit<User, 'id'>): Promise<AuthResponse> {

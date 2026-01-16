@@ -14,7 +14,13 @@ import {
 } from 'react-native';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
-import { getFoodItems, getOrders, getRestaurantInfo } from '@/src/services/firebaseService';
+import {
+  addFoodItem,
+    deleteFoodItem,
+    getFoodItems,
+    getOrders,
+    getRestaurantInfo
+} from '../../services/firebaseService';
 
 interface Order {
   id: string;
@@ -98,33 +104,90 @@ export default function AdminDashboard() {
     Alert.alert('Success', 'Restaurant information updated successfully!');
   };
 
-  const addFoodItem = (foodItem: Omit<SimpleFoodItem, 'id'>) => {
-    const newItem = { ...foodItem, id: Date.now().toString() } as SimpleFoodItem;
-    setFoodItems(prev => [...prev, newItem]);
-    setShowAddFood(false);
-    Alert.alert('Success', 'Food item added successfully!');
+  const handleAddFoodItem = async (foodItem: Omit<SimpleFoodItem, 'id'>) => {
+    try {
+      const result = await addFoodItem(foodItem);
+      if (result.success) {
+        // Reload data to get the updated list
+        await loadData();
+        setShowAddFood(false);
+        setEditingFood(null);
+        Alert.alert('Success', 'Food item added and saved to database!');
+      } else {
+        Alert.alert('Error', 'Failed to add food item');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while adding the food item');
+    }
   };
 
-  const updateFoodItem = (updatedItem: SimpleFoodItem) => {
-    setFoodItems(prev => prev.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
-    setEditingFood(null);
-    Alert.alert('Success', 'Food item updated successfully!');
+  const handleUpdateFoodItem = async (updatedItem: SimpleFoodItem) => {
+    try {
+      const result = await updateFoodItemFirebase(updatedItem.id, updatedItem);
+      if (result.success) {
+        // Reload data to get the updated list
+        await loadData();
+        setEditingFood(null);
+        Alert.alert('Success', 'Food item updated and saved to database!');
+      } else {
+        Alert.alert('Error', 'Failed to update food item');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while updating the food item');
+    }
   };
 
-  const deleteFoodItem = (id: string) => {
+  const handleDeleteFoodItem = async (id: string) => {
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this item?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {
-          setFoodItems(prev => prev.filter(item => item.id !== id));
-          Alert.alert('Success', 'Food item deleted successfully!');
-        }}
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              const result = updateFoodItemFirebase(id);
+              if (result.success) {
+                // Reload data to get the updated list
+                await loadData();
+                Alert.alert('Success', 'Food item deleted from database!');
+              } else {
+                Alert.alert('Error', 'Failed to delete food item');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'An error occurred while deleting the food item');
+            }
+          }
+        }
       ]
     );
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setEditingFood(prev => prev ? { ...prev, image: imageUri } : {
+          id: Date.now().toString(),
+          name: '',
+          price: 0,
+          category: 'mains',
+          description: '',
+          image: imageUri
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
   };
 
   const renderOverviewTab = () => (
@@ -759,3 +822,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 });
+function updateFoodItemFirebase(id: string, updatedItem: SimpleFoodItem) {
+  throw new Error('Function not implemented.');
+}
+

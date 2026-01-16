@@ -17,7 +17,7 @@ import FoodCard from '../../components/food/FoodCard';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { FoodItem, foodService } from '../../services/foodService';
+import { getFoodItems } from '@/src/services/firebaseService';
 
 type RootStackParamList = {
   Auth: undefined;
@@ -25,7 +25,6 @@ type RootStackParamList = {
   FoodDetails: { foodId: string };
   Cart: undefined;
   Checkout: undefined;
-  AdminDashboard: undefined;
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
@@ -37,7 +36,7 @@ interface Props {
 export default function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { addItem } = useCart();
-  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
+  const [foodItems, setFoodItems] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,9 +45,15 @@ export default function HomeScreen({ navigation }: Props) {
     loadFoodItems();
   }, []);
 
-  const loadFoodItems = () => {
-    const items = foodService.getAllFoodItems();
-    setFoodItems(items);
+  const loadFoodItems = async () => {
+    try {
+      const result = await getFoodItems();
+      if (result.success) {
+        setFoodItems(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading food items:', error);
+    }
   };
 
   const onRefresh = () => {
@@ -76,14 +81,18 @@ export default function HomeScreen({ navigation }: Props) {
 
   const categories = [
     { key: 'all', label: 'All' },
-    ...foodService.getCategories()
+    { key: 'mains', label: 'Mains' },
+    { key: 'starters', label: 'Starters' },
+    { key: 'desserts', label: 'Desserts' },
+    { key: 'beverages', label: 'Beverages' },
+    { key: 'burgers', label: 'Burgers' },
   ];
 
-  const handleFoodPress = (item: FoodItem) => {
+  const handleFoodPress = (item: any) => {
     navigation.navigate('FoodDetails', { foodId: item.id });
   };
 
-  const handleAddToCart = (item: FoodItem) => {
+  const handleAddToCart = (item: any) => {
     addItem({
       id: item.id,
       name: item.name,
@@ -104,7 +113,7 @@ export default function HomeScreen({ navigation }: Props) {
     });
   };
 
-  const renderFoodItem = ({ item }: { item: FoodItem }) => (
+  const renderFoodItem = ({ item }: { item: any }) => (
     <FoodCard
       item={item}
       onPress={handleFoodPress}
