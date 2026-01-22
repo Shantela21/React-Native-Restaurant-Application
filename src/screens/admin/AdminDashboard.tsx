@@ -1,25 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
 import {
   addFoodItem,
-    deleteFoodItem,
-    getFoodItems,
-    getOrders,
-    getRestaurantInfo
+  deleteFoodItem,
+  getFoodItems,
+  getOrders,
+  getRestaurantInfo,
+  updateFoodItem,
 } from '../../services/firebaseService';
 
 interface Order {
@@ -40,19 +43,22 @@ interface RestaurantInfo {
   description: string;
 }
 
-interface SimpleFoodItem {
+// Local food item interface that matches Firebase structure
+interface FoodItemWithId {
   id: string;
   name: string;
   price: number;
   category: string;
   description: string;
   image: string;
+  createdAt: any; // Timestamp from Firebase
+  updatedAt: any; // Timestamp from Firebase
 }
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'food' | 'restaurant' | 'orders'>('overview');
-  const [foodItems, setFoodItems] = useState<SimpleFoodItem[]>([]);
+  const [foodItems, setFoodItems] = useState<FoodItemWithId[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo>({
     name: 'Foodie Restaurant',
@@ -62,7 +68,7 @@ export default function AdminDashboard() {
     openingHours: 'Mon-Sun: 9AM-10PM',
     description: 'Delicious food delivered fast',
   });
-  const [editingFood, setEditingFood] = useState<SimpleFoodItem | null>(null);
+  const [editingFood, setEditingFood] = useState<FoodItemWithId | null>(null);
   const [showAddFood, setShowAddFood] = useState(false);
 
   useEffect(() => {
@@ -104,40 +110,84 @@ export default function AdminDashboard() {
     Alert.alert('Success', 'Restaurant information updated successfully!');
   };
 
-  const handleAddFoodItem = async (foodItem: Omit<SimpleFoodItem, 'id'>) => {
+  const handleAddFoodItem = async (foodItem: FoodItemWithId) => {
+    console.log('handleAddFoodItem called with:', foodItem);
     try {
-      const result = await addFoodItem(foodItem);
+      // Remove id, createdAt, updatedAt if it's a new item (Firebase will generate them)
+      const { id, createdAt, updatedAt, ...foodItemData } = foodItem;
+      console.log('foodItemData to send to Firebase:', foodItemData);
+      const result = await addFoodItem(foodItemData);
+      console.log('addFoodItem result:', result);
       if (result.success) {
         // Reload data to get the updated list
         await loadData();
-        setShowAddFood(false);
-        setEditingFood(null);
-        Alert.alert('Success', 'Food item added and saved to database!');
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: 'Food item added successfully! 🎉',
+          position: 'top',
+          visibilityTime: 3000,
+        });
       } else {
-        Alert.alert('Error', 'Failed to add food item');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to add food item',
+          position: 'top',
+          visibilityTime: 3000,
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while adding the food item');
+      console.error('Add food item error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An error occurred while adding the food item',
+        position: 'top',
+        visibilityTime: 3000,
+      });
     }
   };
 
-  const handleUpdateFoodItem = async (updatedItem: SimpleFoodItem) => {
+  const handleUpdateFoodItem = async (updatedItem: FoodItemWithId) => {
+    console.log('handleUpdateFoodItem called with:', updatedItem);
     try {
-      const result = await updateFoodItemFirebase(updatedItem.id, updatedItem);
+      const result = await updateFoodItem(updatedItem.id, updatedItem);
+      console.log('updateFoodItem result:', result);
       if (result.success) {
         // Reload data to get the updated list
         await loadData();
-        setEditingFood(null);
-        Alert.alert('Success', 'Food item updated and saved to database!');
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: 'Food item updated successfully! ✏️',
+          position: 'top',
+          visibilityTime: 3000,
+        });
       } else {
-        Alert.alert('Error', 'Failed to update food item');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to update food item',
+          position: 'top',
+          visibilityTime: 3000,
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while updating the food item');
+      console.error('Update food item error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An error occurred while updating the food item',
+        position: 'top',
+        visibilityTime: 3000,
+      });
     }
   };
 
   const handleDeleteFoodItem = async (id: string) => {
+    console.log('Delete function called for ID:', id);
+    console.log('Current foodItems:', foodItems);
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this item?',
@@ -147,20 +197,44 @@ export default function AdminDashboard() {
           text: 'Delete', 
           style: 'destructive', 
           onPress: async () => {
+            console.log('Delete confirmed for ID:', id);
             try {
-              const result = updateFoodItemFirebase(id);
+              console.log('Calling deleteFoodItem with ID:', id);
+              const result = await deleteFoodItem(id);
+              console.log('Delete result:', result);
               if (result.success) {
+                console.log('Delete successful, reloading data');
                 // Reload data to get the updated list
                 await loadData();
-                Alert.alert('Success', 'Food item deleted from database!');
+                Toast.show({
+                  type: 'success',
+                  text1: 'Success!',
+                  text2: 'Food item deleted successfully! 🗑️',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
               } else {
-                Alert.alert('Error', 'Failed to delete food item');
+                console.log('Delete failed:', result);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Error',
+                  text2: 'Failed to delete food item',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
               }
             } catch (error) {
-              Alert.alert('Error', 'An error occurred while deleting the food item');
+              console.error('Delete error:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An error occurred while deleting the food item',
+                position: 'top',
+                visibilityTime: 3000,
+              });
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -182,7 +256,9 @@ export default function AdminDashboard() {
           price: 0,
           category: 'mains',
           description: '',
-          image: imageUri
+          image: imageUri,
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       }
     } catch (error) {
@@ -234,7 +310,7 @@ export default function AdminDashboard() {
   );
 
   const renderFoodTab = () => (
-    <View style={styles.tabContent}>
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       <View style={styles.foodHeader}>
         <Text style={styles.foodTitle}>Food Management</Text>
         <TouchableOpacity
@@ -249,25 +325,56 @@ export default function AdminDashboard() {
       {showAddFood && (
         <View style={styles.addFoodForm}>
           <Text style={styles.formTitle}>Add New Food Item</Text>
+          
+          {/* Image Picker Section */}
+          <View style={styles.imageSection}>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+              {editingFood?.image ? (
+                <Image source={{ uri: editingFood.image }} style={styles.previewImage} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Ionicons name="camera" size={40} color={Colors.textLight} />
+                  <Text style={styles.imagePlaceholderText}>Add Image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
           <TextInput
             style={styles.input}
             placeholder="Food Name"
             value={editingFood?.name || ''}
-            onChangeText={(value) => setEditingFood(prev => prev ? { ...prev, name: value } : { id: Date.now().toString(), name: value, price: 0, category: 'mains', description: '', image: '' })}
+            onChangeText={(value) => setEditingFood(prev => prev ? { ...prev, name: value } : { id: Date.now().toString(), name: value, price: 0, category: 'mains', description: '', image: '', createdAt: new Date(), updatedAt: new Date() })}
           />
           <TextInput
             style={styles.input}
             placeholder="Price (R)"
             value={editingFood?.price?.toString() || ''}
-            onChangeText={(value) => setEditingFood(prev => prev ? { ...prev, price: parseFloat(value) || 0 } : { id: Date.now().toString(), name: '', price: parseFloat(value) || 0, category: 'mains', description: '', image: '' })}
+            onChangeText={(value) => setEditingFood(prev => prev ? { ...prev, price: parseFloat(value) || 0 } : { id: Date.now().toString(), name: '', price: parseFloat(value) || 0, category: 'mains', description: '', image: '', createdAt: new Date(), updatedAt: new Date() })}
             keyboardType="numeric"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Category"
-            value={editingFood?.category || ''}
-            onChangeText={(value) => setEditingFood(prev => prev ? { ...prev, category: value } : { id: Date.now().toString(), name: '', price: 0, category: value, description: '', image: '' })}
-          />
+          <View style={styles.categoryContainer}>
+            <Text style={styles.label}>Category</Text>
+            <View style={styles.categoryButtons}>
+              {['mains', 'starters', 'desserts', 'beverages', 'alcohol', 'burgers'].map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryButton,
+                    editingFood?.category === category && styles.categoryButtonSelected
+                  ]}
+                  onPress={() => setEditingFood(prev => prev ? { ...prev, category } : { id: Date.now().toString(), name: '', price: 0, category, description: '', image: '', createdAt: new Date(), updatedAt: new Date() })}
+                >
+                  <Text style={[
+                    styles.categoryButtonText,
+                    editingFood?.category === category && styles.categoryButtonTextSelected
+                  ]}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Description"
@@ -288,7 +395,32 @@ export default function AdminDashboard() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.formButton, styles.saveButton]}
-              onPress={() => editingFood && addFoodItem(editingFood)}
+              onPress={async () => {
+                console.log('Save button pressed');
+                console.log('editingFood:', editingFood);
+                
+                if (editingFood) {
+                  console.log('editingFood exists, checking if update or add');
+                  console.log('editingFood.id:', editingFood.id);
+                  console.log('foodItems:', foodItems);
+                  
+                  if (editingFood.id && foodItems.some(item => item.id === editingFood.id)) {
+                    console.log('Updating existing item');
+                    // Update existing item
+                    await handleUpdateFoodItem(editingFood);
+                  } else {
+                    console.log('Adding new item');
+                    // Add new item
+                    await handleAddFoodItem(editingFood);
+                  }
+                  // Clear form after successful save
+                  console.log('Clearing form');
+                  setEditingFood(null);
+                  setShowAddFood(false);
+                } else {
+                  console.log('No editingFood data available');
+                }
+              }}
             >
               <Text style={styles.formButtonText}>Save</Text>
             </TouchableOpacity>
@@ -309,13 +441,16 @@ export default function AdminDashboard() {
             <View style={styles.foodActions}>
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() => setEditingFood(item)}
+                onPress={() => {
+                  setEditingFood(item);
+                  setShowAddFood(true);
+                }}
               >
                 <Ionicons name="create" size={16} color={Colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() => deleteFoodItem(item.id)}
+                onPress={() => handleDeleteFoodItem(item.id)}
               >
                 <Ionicons name="trash" size={16} color={Colors.error} />
               </TouchableOpacity>
@@ -324,8 +459,9 @@ export default function AdminDashboard() {
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.foodList}
+        showsVerticalScrollIndicator={false}
       />
-    </View>
+    </ScrollView>
   );
 
   const renderRestaurantTab = () => (
@@ -472,8 +608,16 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
+    backgroundColor: Colors.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   headerContent: {
     alignItems: 'center',
@@ -483,6 +627,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.surface,
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   headerSubtitle: {
     fontSize: Typography.base,
@@ -492,28 +639,40 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.overlayLight,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    marginTop: -12,
+    padding: 4,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 2,
   },
   activeTab: {
-    borderBottomColor: Colors.primary,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabText: {
     fontSize: Typography.sm,
     color: Colors.textSecondary,
-    marginLeft: 8,
+    fontWeight: '500',
   },
   activeTabText: {
-    color: Colors.primary,
+    color: Colors.surface,
     fontWeight: '600',
   },
   tabContent: {
@@ -524,40 +683,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: 20,
+    gap: 12,
   },
   statCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    minWidth: 100,
+    flex: 1,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.overlayLight,
   },
   statNumber: {
     fontSize: Typography.xxl,
     fontWeight: '800',
     color: Colors.primary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   statLabel: {
     fontSize: Typography.sm,
     color: Colors.textSecondary,
     textAlign: 'center',
+    fontWeight: '500',
   },
   chartContainer: {
     margin: 20,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.overlayLight,
   },
   chartTitle: {
     fontSize: Typography.lg,
@@ -592,36 +757,44 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: Colors.overlayLight,
+    backgroundColor: Colors.surface,
   },
   foodTitle: {
     fontSize: Typography.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.text,
   },
   addButton: {
     flexDirection: 'row',
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   addButtonText: {
     color: Colors.surface,
     fontSize: Typography.sm,
     fontWeight: '600',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   addFoodForm: {
     backgroundColor: Colors.surface,
     margin: 20,
-    padding: 20,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 16,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.overlayLight,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -643,34 +816,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.overlayLight,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 16,
     fontSize: Typography.base,
     color: Colors.text,
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
   formButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 20,
+    gap: 12,
   },
   formButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cancelButton: {
     backgroundColor: Colors.textLight,
-    marginRight: 8,
+    shadowColor: Colors.textLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    marginLeft: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   formButtonText: {
     fontSize: Typography.base,
@@ -821,8 +1013,67 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.primary,
   },
+  categoryContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: Typography.base,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  categoryButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.textLight,
+  },
+  categoryButtonSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  categoryButtonText: {
+    fontSize: Typography.sm,
+    color: Colors.text,
+    fontWeight: '500',
+  },
+  categoryButtonTextSelected: {
+    color: Colors.surface,
+  },
+  imageSection: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  imagePickerButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.textLight,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+    marginTop: 8,
+  },
 });
-function updateFoodItemFirebase(id: string, updatedItem: SimpleFoodItem) {
-  throw new Error('Function not implemented.');
-}
-

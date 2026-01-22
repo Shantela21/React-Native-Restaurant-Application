@@ -4,6 +4,7 @@ import {
     db,
     deleteDoc,
     doc,
+    getDoc,
     getDocs,
     orderBy,
     query,
@@ -91,9 +92,23 @@ export const updateFoodItem = async (id: string, foodItem: Partial<FirebaseFoodI
 
 export const deleteFoodItem = async (id: string) => {
   try {
+    console.log('Attempting to delete document with ID:', id);
     const docRef = doc(db, 'foodItems', id);
-    await deleteDoc(docRef);
-    return { success: true };
+    console.log('Document reference created:', docRef);
+    
+    // Check if document exists before deleting
+    const docSnap = await getDoc(docRef);
+    console.log('Document exists:', docSnap.exists());
+    
+    if (docSnap.exists()) {
+      console.log('Document data before delete:', docSnap.data());
+      await deleteDoc(docRef);
+      console.log('Document deleted successfully');
+      return { success: true };
+    } else {
+      console.log('Document does not exist');
+      return { success: false, error: new Error('Document does not exist') };
+    }
   } catch (error) {
     console.error('Error deleting food item:', error);
     return { success: false, error: error as Error };

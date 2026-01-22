@@ -2,22 +2,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    ImageBackground,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  FlatList,
+  ImageBackground,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import FoodCard from '../../components/food/FoodCard';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { getFoodItems } from '@/src/services/firebaseService';
+import { getFoodItems } from '../../services/firebaseService';
 
 type RootStackParamList = {
   Auth: undefined;
@@ -25,6 +25,7 @@ type RootStackParamList = {
   FoodDetails: { foodId: string };
   Cart: undefined;
   Checkout: undefined;
+  AdminDashboard: undefined;
 };
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
@@ -49,7 +50,20 @@ export default function HomeScreen({ navigation }: Props) {
     try {
       const result = await getFoodItems();
       if (result.success) {
-        setFoodItems(result.data);
+        // Map Firebase data to match FoodItem interface
+        const mapped = (result.data || []).map(firebaseItem => ({
+          id: firebaseItem.id,
+          name: firebaseItem.name,
+          description: firebaseItem.description,
+          price: firebaseItem.price,
+          category: firebaseItem.category as any,
+          image: firebaseItem.image,
+          ingredients: [], // Firebase doesn't have ingredients, use empty array
+          sideOptions: [], // Firebase doesn't have side options, use empty array
+          drinkOptions: [], // Firebase doesn't have drink options, use empty array
+          extras: [], // Firebase doesn't have extras, use empty array
+        }));
+        setFoodItems(mapped);
       }
     } catch (error) {
       console.error('Error loading food items:', error);

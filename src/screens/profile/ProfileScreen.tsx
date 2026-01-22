@@ -11,6 +11,7 @@ import {
     View,
 } from 'react-native';
 import { authService, User } from '../../services/authService';
+import CardDetailsInput from '@/src/components/inputs/CardDetailsInput';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -60,7 +61,7 @@ export default function ProfileScreen({ navigation }: Props) {
           cardHolderName: '',
           expiryDate: '',
           cvv: '',
-          cardType: (currentUser.cardDetails?.cardType as 'visa' | 'mastercard' | 'amex' | 'discover') || 'visa',
+          cardType: 'visa',
         },
       });
     } else {

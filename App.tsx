@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Colors } from './src/constants';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
@@ -13,6 +14,7 @@ export default function App() {
         <View style={styles.container}>
           <AppNavigator />
           <StatusBar style="light" backgroundColor={Colors.primary} />
+          <Toast />
         </View>
       </CartProvider>
     </AuthProvider>
