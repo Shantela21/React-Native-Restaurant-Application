@@ -89,26 +89,35 @@ export default function RegisterScreen({ navigation }: Props) {
 
 
   return (
-    <ImageBackground 
-      source={require('../../assets/images/background (2).png')} 
+    <ImageBackground
+      source={require("../../assets/images/background (2).png")}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
-      
+
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <View style={styles.logoContainer}>
                 <View style={styles.logo}>
-                  <Ionicons name="restaurant" size={60} color={Colors.surface} />
+                  <Ionicons
+                    name="restaurant"
+                    size={60}
+                    color={Colors.surface}
+                  />
                 </View>
                 <Text style={styles.appName}>Foodie</Text>
-                <Text style={styles.tagline}>Create your account</Text>
+                <Text style={styles.tagline}>
+                  Delicious food delivered fast
+                </Text>
               </View>
             </View>
           </View>
@@ -118,7 +127,12 @@ export default function RegisterScreen({ navigation }: Props) {
             <Text style={styles.subtitle}>Sign up to get started</Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="person"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="First Name"
@@ -130,7 +144,12 @@ export default function RegisterScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="person" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="person"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Surname"
@@ -142,7 +161,12 @@ export default function RegisterScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="mail" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="mail"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -155,7 +179,12 @@ export default function RegisterScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -167,19 +196,31 @@ export default function RegisterScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
                 placeholderTextColor={Colors.textLight}
                 value={formData.confirmPassword}
-                onChangeText={(value) => updateFormData("confirmPassword", value)}
+                onChangeText={(value) =>
+                  updateFormData("confirmPassword", value)
+                }
                 secureTextEntry
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="call" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="call"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Phone Number"
@@ -191,7 +232,12 @@ export default function RegisterScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="home" size={20} color={Colors.textLight} style={styles.inputIcon} />
+              <Ionicons
+                name="home"
+                size={20}
+                color={Colors.textLight}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Address"
@@ -218,11 +264,12 @@ export default function RegisterScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.linkButton}
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => navigation.navigate("Login")}
               activeOpacity={0.6}
             >
               <Text style={styles.linkText}>
-                Already have an account? <Text style={styles.linkTextBold}>Login</Text>
+                Already have an account?{" "}
+                <Text style={styles.linkTextBold}>Login</Text>
               </Text>
             </TouchableOpacity>
           </View>

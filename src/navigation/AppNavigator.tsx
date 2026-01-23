@@ -5,11 +5,11 @@ import { useAuth } from "../context/AuthContext";
 import LandingScreen from "../screens/landing/LandingScreen";
 import AdminNavigator from "./AdminNavigator";
 import AuthNavigator from "./AuthNavigator";
+import MainTabNavigator from "./MainTabNavigator";
 
 import CartScreen from "../screens/cart/CartScreen";
 import CheckoutScreen from "../screens/checkout/CheckoutScreen";
 import FoodDetailsScreen from "../screens/food/FoodDetailsScreen";
-import HomeScreen from "../screens/home/HomeScreen";
 
 export type RootStackParamList = {
   Landing: undefined;
@@ -43,7 +43,7 @@ const AppNavigator: React.FC = () => {
         <>
           {isAdmin && <Stack.Screen name="Admin" component={AdminNavigator} />}
 
-          <Stack.Screen name="Main" component={HomeScreen} />
+          <Stack.Screen name="Main" component={MainTabNavigator} />
           <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
           <Stack.Screen name="Cart" component={CartScreen} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />

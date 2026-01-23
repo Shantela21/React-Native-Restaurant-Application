@@ -179,28 +179,14 @@ export default function HomeScreen({ navigation }: Props) {
               {user?.name ? `Welcome, ${user.name}` : "Restaurant Menu"}
             </Text>
           </View>
-          <View style={styles.headerActions}>
+          {user?.email === "admin@foodie.com" && (
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => navigation.navigate("Cart")}
+              onPress={() => navigation.navigate("AdminDashboard")}
             >
-              <Ionicons name="cart" size={24} color={Colors.surface} />
+              <Ionicons name="settings" size={24} color={Colors.surface} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate("Login")}
-            >
-              <Ionicons name="person" size={24} color={Colors.surface} />
-            </TouchableOpacity>
-            {user?.email === "admin@foodie.com" && (
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => navigation.navigate("AdminDashboard")}
-              >
-                <Ionicons name="settings" size={24} color={Colors.surface} />
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
         </View>
       </View>
 
