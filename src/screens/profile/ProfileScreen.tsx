@@ -101,7 +101,7 @@ export default function ProfileScreen({ navigation }: Props) {
         style: 'destructive',
         onPress: async () => {
           await logout();
-          navigation.navigate('Login');
+          // Navigation will happen automatically due to conditional rendering
         },
       },
     ]);

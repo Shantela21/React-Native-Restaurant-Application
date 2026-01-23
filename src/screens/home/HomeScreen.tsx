@@ -288,12 +288,16 @@ const styles = StyleSheet.create({
     backdropFilter: "blur(10)",
   },
   categoriesContainer: {
-    backgroundColor: Colors.surface,
-    paddingVertical: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingVertical: 5,
+    minHeight: 40, // minimum height
+    maxHeight: 60, // maximum height
     borderBottomWidth: 1,
     marginBottom: 20,
     borderBottomColor: Colors.overlayLight,
+    backdropFilter: "blur(10)",
   },
+
   categoriesContent: {
     paddingHorizontal: 16,
     gap: 8,
@@ -338,8 +342,9 @@ const styles = StyleSheet.create({
   },
 
   searchContainer: {
-    padding: 20,
-    backgroundColor: Colors.surface,
+    marginTop: -20,
+    padding: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   searchInputContainer: {
     flexDirection: "row",
