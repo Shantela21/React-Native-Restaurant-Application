@@ -1,7 +1,6 @@
 import {
     addDoc,
     collection,
-    db,
     deleteDoc,
     doc,
     getDoc,
@@ -10,7 +9,8 @@ import {
     query,
     Timestamp,
     updateDoc
-} from '../config/firebase';
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 // Food Item interface for Firebase
 export interface FirebaseFoodItem {

@@ -1,5 +1,26 @@
-import { authService } from './authService';
-import { Order } from './foodService';
+
+import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+  deliveryAddress: string;
+  paymentMethod: 'cash' | 'card';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
 export interface OrderResponse {
   success: boolean;
@@ -8,11 +29,9 @@ export interface OrderResponse {
 }
 
 class OrderService {
-  private orders: Order[] = [];
-
   async placeOrder(orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<OrderResponse> {
     try {
-      const currentUser = authService.getCurrentUser();
+      const currentUser = auth.currentUser;
       if (!currentUser) {
         return {
           success: false,
@@ -23,68 +42,104 @@ class OrderService {
       const newOrder: Order = {
         ...orderData,
         id: Date.now().toString(),
-        userId: currentUser.id,
+        userId: currentUser.uid,
         status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      this.orders.push(newOrder);
+      // Save to Firestore
+      await setDoc(doc(db, "orders", newOrder.id), newOrder);
 
       return {
         success: true,
         order: newOrder,
         message: 'Order placed successfully'
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
-        message: 'Failed to place order'
+        message: error.message || 'Failed to place order'
       };
     }
   }
 
-  getUserOrders(userId: string): Order[] {
-    return this.orders
-      .filter(order => order.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  getOrderById(orderId: string): Order | undefined {
-    return this.orders.find(order => order.id === orderId);
-  }
-
-  updateOrderStatus(orderId: string, status: Order['status']): OrderResponse {
+  async getUserOrders(userId: string): Promise<Order[]> {
     try {
-      const orderIndex = this.orders.findIndex(order => order.id === orderId);
-      if (orderIndex === -1) {
-        return {
-          success: false,
-          message: 'Order not found'
-        };
-      }
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(ordersQuery);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Order));
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      return [];
+    }
+  }
 
-      this.orders[orderIndex] = {
-        ...this.orders[orderIndex],
+  async getOrderById(orderId: string): Promise<Order | undefined> {
+    try {
+      const orderDoc = await getDoc(doc(db, "orders", orderId));
+      if (orderDoc.exists()) {
+        return {
+          id: orderDoc.id,
+          ...orderDoc.data()
+        } as Order;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      return undefined;
+    }
+  }
+
+  async updateOrderStatus(orderId: string, status: Order['status']): Promise<OrderResponse> {
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      
+      await updateDoc(orderRef, {
         status,
         updatedAt: new Date(),
-      };
+      });
+
+      // Get updated order
+      const updatedOrder = await this.getOrderById(orderId);
 
       return {
         success: true,
-        order: this.orders[orderIndex],
+        order: updatedOrder,
         message: 'Order status updated successfully'
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
-        message: 'Failed to update order status'
+        message: error.message || 'Failed to update order status'
       };
     }
   }
 
-  getAllOrders(): Order[] {
-    return this.orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  async getAllOrders(): Promise<Order[]> {
+    try {
+      const ordersQuery = query(
+        collection(db, "orders"),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(ordersQuery);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Order));
+    } catch (error) {
+      console.error("Error fetching all orders:", error);
+      return [];
+    }
   }
 }
 

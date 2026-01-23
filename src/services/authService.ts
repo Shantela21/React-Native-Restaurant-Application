@@ -1,20 +1,32 @@
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
+
+/* =======================
+   Types
+======================= */
+
 export interface CardDetails {
   cardNumber: string;
   cardHolderName: string;
   expiryDate: string;
   cvv: string;
-  cardType: 'visa' | 'mastercard' | 'amex' | 'discover';
+  cardType: "visa" | "mastercard" | "amex" | "discover";
 }
 
 export interface User {
-  id: string;
+  uid: string;
   name: string;
   surname: string;
   email: string;
-  password: string;
   phone: string;
   address: string;
-  cardDetails?: CardDetails;
+  password:string;
+  cardDetails?: CardDetails; // ✅ optional
 }
 
 export interface AuthResponse {
@@ -23,121 +35,128 @@ export interface AuthResponse {
   message?: string;
 }
 
+/* =======================
+   Auth Service
+======================= */
+
 class AuthService {
-  private users: User[] = [
-    // Default admin user
-    {
-      id: 'admin-1',
-      name: 'Admin',
-      surname: 'User',
-      email: 'admin@foodie.com',
-      password: 'admin123',
-      phone: '+27 12 345 6789',
-      address: '123 Admin St, Admin City',
-    }
-  ];
-  private currentUser: User | null = null;
-
-  async register(userData: Omit<User, 'id'>): Promise<AuthResponse> {
+  getCurrentUser() {
+      throw new Error('Method not implemented.');
+  }
+  /* -------- Register -------- */
+  async register(data: {
+    name: string;
+    surname: string;
+    email: string;
+    password: string;
+    phone: string;
+    address: string;
+  }): Promise<AuthResponse> {
     try {
-      const existingUser = this.users.find(user => user.email === userData.email);
-      if (existingUser) {
-        return {
-          success: false,
-          message: 'User with this email already exists'
-        };
-      }
+      // 1. Create Firebase Auth user
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
 
-      const newUser: User = {
-        ...userData,
-        id: Date.now().toString()
+      const firebaseUser = userCredential.user;
+
+      // 2. Save profile in Firestore
+      const userProfile: Omit<User, "uid"> = {
+        name: data.name,
+        surname: data.surname,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        password:data.password
       };
 
-      this.users.push(newUser);
-      this.currentUser = newUser;
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        ...userProfile,
+        createdAt: new Date(),
+      });
 
       return {
         success: true,
-        user: newUser,
-        message: 'Registration successful'
+        user: {
+          uid: firebaseUser.uid,
+          ...userProfile,
+        },
+        message: "Registration successful",
       };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Registration failed'
-      };
+    } catch (error: any) {
+      console.error("Register error:", error);
+      
+      // Handle specific Firebase errors
+      if (error.code === 'auth/email-already-in-use') {
+        return {
+          success: false,
+          message: "This email is already registered. Please try logging in instead.",
+        };
+      } else if (error.code === 'auth/weak-password') {
+        return {
+          success: false,
+          message: "Password is too weak. Please use a stronger password.",
+        };
+      } else if (error.code === 'auth/invalid-email') {
+        return {
+          success: false,
+          message: "Invalid email address. Please check your email format.",
+        };
+      } else {
+        return {
+          success: false,
+          message: error.message || "Registration failed",
+        };
+      }
     }
   }
 
+  /* -------- Login -------- */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
-      const user = this.users.find(u => u.email === email && u.password === password);
-      
-      if (!user) {
+      // 1. Firebase Auth login
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const firebaseUser = userCredential.user;
+
+      // 2. Fetch user profile from Firestore
+      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+
+      if (!userDoc.exists()) {
         return {
           success: false,
-          message: 'Invalid email or password'
+          message: "User profile not found",
         };
       }
 
-      this.currentUser = user;
       return {
         success: true,
-        user: user,
-        message: 'Login successful'
+        user: {
+          uid: firebaseUser.uid,
+          ...(userDoc.data() as Omit<User, "uid">),
+        },
+        message: "Login successful",
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Login error:", error);
       return {
         success: false,
-        message: 'Login failed'
+        message: error.message || "Invalid email or password",
       };
     }
   }
 
-  async updateProfile(updates: Partial<Omit<User, 'id' | 'email'>>): Promise<AuthResponse> {
-    try {
-      if (!this.currentUser) {
-        return {
-          success: false,
-          message: 'No user is currently logged in'
-        };
-      }
-
-      const userIndex = this.users.findIndex(u => u.id === this.currentUser!.id);
-      if (userIndex === -1) {
-        return {
-          success: false,
-          message: 'User not found'
-        };
-      }
-
-      this.users[userIndex] = { ...this.users[userIndex], ...updates };
-      this.currentUser = this.users[userIndex];
-
-      return {
-        success: true,
-        user: this.currentUser,
-        message: 'Profile updated successfully'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Profile update failed'
-      };
-    }
-  }
-
-  getCurrentUser(): User | null {
-    return this.currentUser;
-  }
-
-  logout(): void {
-    this.currentUser = null;
-  }
-
-  isLoggedIn(): boolean {
-    return this.currentUser !== null;
+  /* -------- Logout -------- */
+  async logout(): Promise<void> {
+    await signOut(auth);
   }
 }
 
 export const authService = new AuthService();
+export default authService;

@@ -1,19 +1,19 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import CardDetailsInput from '../../components/inputs/CardDetailsInput';
-import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
-import { orderService } from '../../services/orderService';
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import CardDetailsInput from "../../components/inputs/CardDetailsInput";
+import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
+import { orderService } from "../../services/orderService";
 
 type RootStackParamList = {
   Auth: undefined;
@@ -23,7 +23,10 @@ type RootStackParamList = {
   Checkout: undefined;
 };
 
-type CheckoutScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Checkout'>;
+type CheckoutScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Checkout"
+>;
 
 interface Props {
   navigation: CheckoutScreenNavigationProp;
@@ -32,9 +35,11 @@ interface Props {
 export default function CheckoutScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { items, clearCart, getTotalPrice, getTotalItems } = useCart();
-  
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [selectedCard, setSelectedCard] = useState<any>(user?.cardDetails || null);
+
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [selectedCard, setSelectedCard] = useState<any>(
+    user?.cardDetails || null
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -45,23 +50,26 @@ export default function CheckoutScreen({ navigation }: Props) {
 
   const handlePlaceOrder = async () => {
     if (!user) {
-      Alert.alert('Login Required', 'Please login to place an order');
-      navigation.navigate('Auth');
+      Alert.alert("Login Required", "Please login to place an order");
+      navigation.navigate("Auth");
       return;
     }
 
     if (items.length === 0) {
-      Alert.alert('Cart Empty', 'Please add items to your cart before placing an order');
+      Alert.alert(
+        "Cart Empty",
+        "Please add items to your cart before placing an order"
+      );
       return;
     }
 
     if (!deliveryAddress.trim()) {
-      Alert.alert('Address Required', 'Please enter a delivery address');
+      Alert.alert("Address Required", "Please enter a delivery address");
       return;
     }
 
     if (!selectedCard) {
-      Alert.alert('Payment Required', 'Please select a payment method');
+      Alert.alert("Payment Required", "Please select a payment method");
       return;
     }
 
@@ -72,31 +80,31 @@ export default function CheckoutScreen({ navigation }: Props) {
         items,
         totalAmount: getTotalPrice(),
         deliveryAddress,
-        paymentMethod: `Card ending in ${selectedCard.cardNumber.slice(-4)}`,
-        status: 'pending' as const,
+        paymentMethod: "card" as const,
+        status: "pending" as const,
       };
 
       const result = await orderService.placeOrder(orderData);
 
       if (result.success) {
         Alert.alert(
-          'Order Placed!',
-          'Your order has been placed successfully.',
+          "Order Placed!",
+          "Your order has been placed successfully.",
           [
             {
-              text: 'OK',
+              text: "OK",
               onPress: () => {
                 clearCart();
-                navigation.navigate('Main');
+                navigation.navigate("Main");
               },
             },
           ]
         );
       } else {
-        Alert.alert('Error', result.message || 'Failed to place order');
+        Alert.alert("Error", result.message || "Failed to place order");
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert("Error", "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -107,7 +115,9 @@ export default function CheckoutScreen({ navigation }: Props) {
       <Text style={styles.sectionTitle}>Order Summary</Text>
       {items.map((item, index) => (
         <View key={item.id} style={styles.orderItem}>
-          <Text style={styles.itemName}>{item.quantity}x {item.name}</Text>
+          <Text style={styles.itemName}>
+            {item.quantity}x {item.name}
+          </Text>
           <Text style={styles.itemPrice}>R{item.totalPrice.toFixed(2)}</Text>
         </View>
       ))}
@@ -126,7 +136,9 @@ export default function CheckoutScreen({ navigation }: Props) {
       </View>
       <View style={[styles.totalRow, styles.grandTotal]}>
         <Text style={styles.totalLabel}>Total:</Text>
-        <Text style={styles.totalValue}>R{(getTotalPrice() + 2.99).toFixed(2)}</Text>
+        <Text style={styles.totalValue}>
+          R{(getTotalPrice() + 2.99).toFixed(2)}
+        </Text>
       </View>
     </View>
   );
@@ -136,10 +148,12 @@ export default function CheckoutScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.loginPrompt}>
           <Text style={styles.loginPromptTitle}>Login Required</Text>
-          <Text style={styles.loginPromptText}>Please login to place an order</Text>
+          <Text style={styles.loginPromptText}>
+            Please login to place an order
+          </Text>
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={() => navigation.navigate('Auth')}
+            onPress={() => navigation.navigate("Auth")}
           >
             <Text style={styles.loginButtonText}>Go to Login</Text>
           </TouchableOpacity>
@@ -151,7 +165,7 @@ export default function CheckoutScreen({ navigation }: Props) {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Checkout</Text>
-      
+
       {renderOrderSummary()}
       {renderTotals()}
 
@@ -169,14 +183,14 @@ export default function CheckoutScreen({ navigation }: Props) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment Method</Text>
-        <CardDetailsInput
-          value={selectedCard}
-          onChange={setSelectedCard}
-        />
+        <CardDetailsInput value={selectedCard} onChange={setSelectedCard} />
       </View>
 
       <TouchableOpacity
-        style={[styles.placeOrderButton, loading && styles.placeOrderButtonDisabled]}
+        style={[
+          styles.placeOrderButton,
+          loading && styles.placeOrderButtonDisabled,
+        ]}
         onPress={handlePlaceOrder}
         disabled={loading}
       >
@@ -193,21 +207,21 @@ export default function CheckoutScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
     marginVertical: 20,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 16,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -218,100 +232,100 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 16,
   },
   orderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   itemName: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     flex: 1,
   },
   itemPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontWeight: "bold",
+    color: "#007AFF",
   },
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
   },
   totalLabel: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   totalValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   grandTotal: {
     borderTopWidth: 2,
-    borderTopColor: '#007AFF',
+    borderTopColor: "#007AFF",
     paddingTop: 8,
   },
   addressInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     minHeight: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   placeOrderButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     margin: 16,
     paddingVertical: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   placeOrderButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   placeOrderButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   loginPrompt: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 40,
   },
   loginPromptTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 16,
   },
   loginPromptText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 24,
   },
   loginButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   loginButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

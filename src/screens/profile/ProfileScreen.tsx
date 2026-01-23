@@ -1,17 +1,17 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { authService, User } from '../../services/authService';
-import CardDetailsInput from '@/src/components/inputs/CardDetailsInput';
+import CardDetailsInput from '../../components/inputs/CardDetailsInput';
+import { useAuth } from '../../context/AuthContext';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function ProfileScreen({ navigation }: Props) {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, updateProfile, logout } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -44,19 +44,13 @@ export default function ProfileScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  const loadUserProfile = () => {
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
+    if (user) {
       setFormData({
-        name: currentUser.name,
-        surname: currentUser.surname,
-        phone: currentUser.phone,
-        address: currentUser.address,
-        cardDetails: currentUser.cardDetails || {
+        name: user.name || '',
+        surname: user.surname || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        cardDetails: user.cardDetails || {
           cardNumber: '',
           cardHolderName: '',
           expiryDate: '',
@@ -64,15 +58,8 @@ export default function ProfileScreen({ navigation }: Props) {
           cardType: 'visa',
         },
       });
-    } else {
-      Alert.alert('Error', 'No user logged in', [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('Login'),
-        },
-      ]);
     }
-  };
+  }, [user]);
 
   const handleUpdateProfile = async () => {
     if (!formData.name.trim() || !formData.surname.trim()) {
@@ -82,7 +69,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
-      const result = await authService.updateProfile({
+      const result = await updateProfile({
         name: formData.name,
         surname: formData.surname,
         phone: formData.phone,
@@ -91,7 +78,6 @@ export default function ProfileScreen({ navigation }: Props) {
       });
 
       if (result.success) {
-        setUser(result.user || null);
         setEditMode(false);
         Alert.alert('Success', 'Profile updated successfully');
       } else {
@@ -104,25 +90,21 @@ export default function ProfileScreen({ navigation }: Props) {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+  const handleLogout = async () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          navigation.navigate('Login');
         },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            authService.logout();
-            navigation.navigate('Login');
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const updateFormData = (field: string, value: string) => {
@@ -221,7 +203,8 @@ export default function ProfileScreen({ navigation }: Props) {
             />
           ) : (
             <Text style={styles.value}>
-              {user.cardDetails ? `**** **** **** ${user.cardDetails.cardNumber.slice(-4)}` : 'Not provided'}
+              {user?.cardDetails ? `**** **** **** ${user.cardDetails.cardNumber?.slice(-4) || ''}` : 'Not provided'}
+
             </Text>
           )}
         </View>
@@ -242,19 +225,26 @@ export default function ProfileScreen({ navigation }: Props) {
                 style={[styles.button, styles.cancelButton]}
                 onPress={() => {
                   setEditMode(false);
-                  loadUserProfile();
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity
-              style={[styles.button, styles.editButton]}
-              onPress={() => setEditMode(true)}
-            >
-              <Text style={styles.buttonText}>Edit Profile</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={[styles.button, styles.editButton]}
+                onPress={() => setEditMode(true)}
+              >
+                <Text style={styles.buttonText}>Edit Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.logoutButton]}
+                onPress={handleLogout}
+              >
+                <Text style={styles.buttonText}>Logout</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>

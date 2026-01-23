@@ -17,6 +17,13 @@ interface CartItemCardProps {
   onEdit: () => void;
 }
 
+interface SelectedOption {
+  name: string;
+  price: number;
+  quantity: number;
+  
+}
+
 const CartItemCard: React.FC<CartItemCardProps> = ({
   item,
   onIncrease,

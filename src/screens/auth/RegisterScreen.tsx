@@ -16,12 +16,12 @@ import {
 } from 'react-native';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 
 type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   Profile: undefined;
-  Main: undefined;
 };
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -44,24 +44,15 @@ export default function RegisterScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!formData.name || !formData.surname || !formData.email || !formData.password || !formData.phone || !formData.address) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
     if (formData.password !== formData.confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
-    if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const result = await register({
+      const result = await authService.register({
         name: formData.name,
         surname: formData.surname,
         email: formData.email,
@@ -71,22 +62,31 @@ export default function RegisterScreen({ navigation }: Props) {
       });
 
       if (result.success) {
-        Alert.alert('Success', 'Registration successful!');
-        // The AuthContext will automatically update the user state
-        // and the AppNavigator will show the Main screen
+        Alert.alert('Success', 'Registration successful!', [
+        
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+            
+          },
+        ]);
+        console.log("Registered user:", result.user);
       } else {
         Alert.alert('Error', result.message || 'Registration failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error', 'Something went wrong');
+      console.log("Register failed");
     } finally {
       setLoading(false);
     }
+    
   };
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
 
   return (
     <ImageBackground 
@@ -218,7 +218,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.linkButton}
-              onPress={() => navigation.navigate("Login")}
+              onPress={() => navigation.navigate('Login')}
               activeOpacity={0.6}
             >
               <Text style={styles.linkText}>

@@ -37,29 +37,29 @@ export default function LoginScreen({ navigation }: Props) {
   });
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!formData.email || !formData.password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+ const handleLogin = async () => {
+   if (!formData.email || !formData.password) {
+     Alert.alert("Error", "Please fill in all fields");
+     return;
+   }
 
-    setLoading(true);
-    try {
-      const result = await login(formData.email, formData.password);
+   setLoading(true);
+   try {
+     const result = await login(formData.email, formData.password);
 
-      if (result.success) {
-        Alert.alert('Success', 'Login successful!');
-        // The AuthContext will automatically update the user state
-        // and the AppNavigator will show the Main screen
-      } else {
-        Alert.alert('Error', result.message || 'Login failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+     if (result.success) {
+       Alert.alert("Success", "Login successful!");
+       // AuthContext will handle navigation automatically
+     } else {
+       Alert.alert("Error", result.message || "Login failed");
+     }
+   } catch (error) {
+     Alert.alert("Error", "An unexpected error occurred");
+   } finally {
+     setLoading(false);
+   }
+ };
+
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
