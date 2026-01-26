@@ -9,7 +9,7 @@ interface SafeImageProps extends Omit<ImageProps, 'source'> {
 
 const SafeImage: React.FC<SafeImageProps> = ({
   uri,
-  fallbackUri = 'https://via.placeholder.com/150x150?text=No+Image',
+  fallbackUri = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9Ijc1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=',
   placeholder,
   style,
   ...imageProps

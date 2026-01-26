@@ -67,7 +67,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
         source={{ 
           uri: item.image && item.image.trim() !== '' 
             ? item.image 
-            : 'https://via.placeholder.com/60x60?text=No+Image' 
+            : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjRmNGY0Ii8+PHRleHQgeD0iMzAiIHk9IjMyIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vPC90ZXh0Pjwvc3ZnPg=='
         }} 
         style={styles.itemImage} 
       />

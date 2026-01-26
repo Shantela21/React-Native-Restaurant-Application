@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   Timestamp,
@@ -78,7 +79,7 @@ export const getFoodItems = async () => {
 
 export const updateFoodItem = async (id: string, foodItem: Partial<FirebaseFoodItem>) => {
   try {
-    const docRef = doc(db, 'foodItems', id);
+    const docRef = doc(db, 'foods', id);
     await updateDoc(docRef, {
       ...foodItem,
       updatedAt: Timestamp.now(),
@@ -93,7 +94,7 @@ export const updateFoodItem = async (id: string, foodItem: Partial<FirebaseFoodI
 export const deleteFoodItem = async (id: string) => {
   try {
     console.log('Attempting to delete document with ID:', id);
-    const docRef = doc(db, 'foodItems', id);
+    const docRef = doc(db, 'foods', id);
     console.log('Document reference created:', docRef);
     
     // Check if document exists before deleting
@@ -193,4 +194,23 @@ export const updateRestaurantInfo = async (id: string, info: Partial<FirebaseRes
     console.error('Error updating restaurant info:', error);
     return { success: false, error: error as Error };
   }
+};
+
+// Real-time listener for food items
+export const subscribeToFoodItems = (callback: (items: (FirebaseFoodItem & { id: string })[]) => void) => {
+  const q = query(foodItemsCollection, orderBy('createdAt', 'desc'));
+  
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const items = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as (FirebaseFoodItem & { id: string })[];
+    
+    console.log('Real-time food items update:', items.length, 'items');
+    callback(items);
+  }, (error) => {
+    console.error('Error in real-time food items listener:', error);
+  });
+
+  return unsubscribe;
 };

@@ -210,7 +210,11 @@ export default function FoodDetailsScreen({ route, navigation }: Props) {
   return (
     <ScrollView style={styles.container}>
       <Image 
-        source={{ uri: foodItem.image || 'https://via.placeholder.com/400x300?text=No+Image' }} 
+        source={{ 
+          uri: foodItem.image && foodItem.image.trim() !== '' 
+            ? foodItem.image 
+            : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjIwMCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='
+        }} 
         style={styles.foodImage} 
       />
       

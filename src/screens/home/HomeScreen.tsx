@@ -17,7 +17,7 @@ import FoodCard from "../../components/food/FoodCard";
 import { Colors, Typography } from "../../constants";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { getFoodItems } from "../../services/firebaseService";
+import { getFoodItems } from '../../services/firebaseService';
 
 type RootStackParamList = {
   Main: undefined;
@@ -50,6 +50,29 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     loadFoodItems();
+    
+    // Set up real-time listener for food items
+    const unsubscribe = subscribeToFoodItems((firebaseItems) => {
+      // Map Firebase data to match FoodItem interface
+      const mapped = (firebaseItems || []).map((firebaseItem) => ({
+        id: firebaseItem.id,
+        name: firebaseItem.name,
+        description: firebaseItem.description,
+        price: firebaseItem.price,
+        category: firebaseItem.category as any,
+        image: firebaseItem.image,
+        ingredients: [], // Firebase doesn't have ingredients, use empty array
+        sideOptions: [], // Firebase doesn't have side options, use empty array
+        drinkOptions: [], // Firebase doesn't have drink options, use empty array
+        extras: [], // Firebase doesn't have extras, use empty array
+      }));
+      setFoodItems(mapped);
+    });
+
+    // Cleanup listener on unmount
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadFoodItems = async () => {
@@ -191,6 +214,27 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.greeting}>Good to see you!</Text>
+              <Text style={styles.title}>
+                {user?.name ? `Welcome, ${user.name}` : "Restaurant Menu"}
+              </Text>
+            </View>
+            {user?.email === "admin@foodie.com" && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => navigation.navigate("AdminDashboard")}
+              >
+                <Ionicons name="settings" size={24} color={Colors.surface} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Categories Section */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -200,6 +244,7 @@ export default function HomeScreen({ navigation }: Props) {
           {categories.map(renderCategoryButton)}
         </ScrollView>
 
+        {/* Search Section */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <Ionicons
@@ -218,6 +263,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </View>
 
+        {/* Food List - Main Content */}
         <FlatList
           data={getFilteredItems() || []}
           renderItem={renderFoodItem}
@@ -227,11 +273,21 @@ export default function HomeScreen({ navigation }: Props) {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No food items found</Text>
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              <Text style={styles.listHeaderText}>
+                {getFilteredItems().length} {getFilteredItems().length === 1 ? 'Item' : 'Items'}
+              </Text>
             </View>
           }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="restaurant" size={64} color={Colors.textLight} />
+              <Text style={styles.emptyText}>No food items found</Text>
+              <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
         />
       </View>
     </ImageBackground>
@@ -377,5 +433,24 @@ const styles = StyleSheet.create({
     fontSize: Typography.lg,
     color: Colors.textSecondary,
     fontWeight: "500",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: Typography.base,
+    color: Colors.textLight,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  listHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.overlayLight,
+  },
+  listHeaderText: {
+    fontSize: Typography.base,
+    color: Colors.text,
+    fontWeight: "600",
   },
 });

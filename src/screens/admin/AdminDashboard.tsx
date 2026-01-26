@@ -252,11 +252,19 @@ export default function AdminDashboard() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 1,
+        quality: 0.8, // Reduced quality for better compatibility
       });
 
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
+        console.log('Image URI picked:', imageUri);
+        
+        // Validate URI format
+        if (!imageUri || imageUri.trim() === '') {
+          Alert.alert('Error', 'Invalid image URI');
+          return;
+        }
+
         setEditingFood(prev => prev ? { ...prev, image: imageUri } : {
           id: Date.now().toString(),
           name: '',
@@ -269,6 +277,7 @@ export default function AdminDashboard() {
         });
       }
     } catch (error) {
+      console.error('Image picker error:', error);
       Alert.alert('Error', 'Failed to pick image');
     }
   };
@@ -486,7 +495,12 @@ export default function AdminDashboard() {
           <View style={styles.imageSection}>
             <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
               {editingFood?.image && editingFood.image.trim() !== '' ? (
-                <Image source={{ uri: editingFood.image }} style={styles.previewImage} />
+                <Image 
+                  source={{ uri: editingFood.image }} 
+                  style={styles.previewImage}
+                  onError={() => console.log('Image failed to load:', editingFood.image)}
+                  onLoad={() => console.log('Image loaded successfully:', editingFood.image)}
+                />
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <Ionicons name="camera" size={40} color={Colors.textLight} />
@@ -592,9 +606,11 @@ export default function AdminDashboard() {
                 source={{ 
                   uri: item.image && item.image.trim() !== '' 
                     ? item.image 
-                    : 'https://via.placeholder.com/100x100?text=No+Image' 
+                    : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
                 }} 
-                style={styles.foodImage} 
+                style={styles.foodImage}
+                onError={() => console.log('Food list image failed to load:', item.image)}
+                onLoad={() => console.log('Food list image loaded:', item.image)}
               />
             <View style={styles.foodInfo}>
               <Text style={styles.foodName}>{item.name}</Text>

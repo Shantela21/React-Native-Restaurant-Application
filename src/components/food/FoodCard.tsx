@@ -21,6 +21,18 @@ interface FoodCardProps {
 const FoodCard: React.FC<FoodCardProps> = ({ item, onPress, onAddToCart }) => {
   const animatedValue = React.useRef(new Animated.Value(1)).current;
 
+  // Debug: Log the item data
+  React.useEffect(() => {
+    console.log('FoodCard received item:', {
+      id: item.id,
+      name: item.name,
+      hasImage: !!item.image,
+      imageUri: item.image,
+      imageLength: item.image?.length,
+      imageStart: item.image?.substring(0, 50)
+    });
+  }, [item]);
+
   const handlePressIn = () => {
     Animated.spring(animatedValue, {
       toValue: 0.95,
@@ -51,8 +63,10 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, onPress, onAddToCart }) => {
         <View style={styles.imageContainer}>
           <SafeImage 
             uri={item.image}
-            fallbackUri="https://via.placeholder.com/150x150?text=No+Image"
-            style={styles.image} 
+            fallbackUri="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9Ijc1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4="
+            style={styles.image}
+            onError={(error) => console.log('FoodCard image failed to load:', item.image, error)}
+            onLoad={() => console.log('FoodCard image loaded successfully:', item.image)}
           />
           <View style={styles.priceBadge}>
             <Text style={styles.priceText}>R{item.price.toFixed(2)}</Text>
