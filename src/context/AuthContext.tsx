@@ -188,8 +188,16 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   // Logout
   const logout = async () => {
-    await signOut(auth);
-    setUser(null);
+    try {
+      await signOut(auth);
+      setUser(null);
+      console.log('Firebase signOut successful');
+    } catch (error) {
+      console.error('Firebase signOut error:', error);
+      // Force logout even if Firebase signOut fails
+      setUser(null);
+      throw error;
+    }
   };
 
   // Update profile

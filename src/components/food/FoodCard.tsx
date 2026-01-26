@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Animated,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { Colors, Typography } from '../../constants';
 import { FoodItem } from '../../services/foodService';
+import SafeImage from '../common/SafeImage';
 
 interface FoodCardProps {
   item: FoodItem;
@@ -49,7 +49,11 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, onPress, onAddToCart }) => {
         activeOpacity={1}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.image} />
+          <SafeImage 
+            uri={item.image}
+            fallbackUri="https://via.placeholder.com/150x150?text=No+Image"
+            style={styles.image} 
+          />
           <View style={styles.priceBadge}>
             <Text style={styles.priceText}>R{item.price.toFixed(2)}</Text>
           </View>

@@ -1,13 +1,13 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -209,7 +209,10 @@ export default function FoodDetailsScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.container}>
-      <Image source={{ uri: foodItem.image }} style={styles.foodImage} />
+      <Image 
+        source={{ uri: foodItem.image || 'https://via.placeholder.com/400x300?text=No+Image' }} 
+        style={styles.foodImage} 
+      />
       
       <View style={styles.content}>
         <Text style={styles.foodName}>{foodItem.name}</Text>

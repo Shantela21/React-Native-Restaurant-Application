@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import CardDetailsInput from '../../components/inputs/CardDetailsInput';
 import { useAuth } from '../../context/AuthContext';
+import { showAlert, showConfirmDialog } from '../../utils/platform';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -91,20 +92,17 @@ export default function ProfileScreen({ navigation }: Props) {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-          // Navigation will happen automatically due to conditional rendering
-        },
-      },
-    ]);
+    try {
+      const shouldLogout = await showConfirmDialog('Are you sure you want to logout?');
+      
+      if (shouldLogout) {
+        await logout();
+        console.log('Logout successful');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      showAlert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   const updateFormData = (field: string, value: string) => {

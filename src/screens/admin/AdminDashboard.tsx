@@ -20,12 +20,11 @@ import {
   addFoodItem,
   deleteFoodItem,
   getFoodItems,
-  getOrders,
   getRestaurantInfo,
   getUsers,
   updateFoodItem
 } from '../../services/firebaseService';
-import { Order } from '../../services/orderService';
+import { Order, orderService } from '../../services/orderService';
 
 interface User {
   id: string;
@@ -86,11 +85,9 @@ export default function AdminDashboard() {
       setFoodItems(foodResult.data);
     }
 
-    // Load orders from Firebase
-    const ordersResult = await getOrders();
-    if (ordersResult.success) {
-      setOrders(ordersResult.data);
-    }
+    // Load orders from Firebase using orderService
+    const ordersData = await orderService.getAllOrders();
+    setOrders(ordersData);
 
     // Load users from Firebase
     const usersResult = await getUsers();
@@ -488,7 +485,7 @@ export default function AdminDashboard() {
           {/* Image Picker Section */}
           <View style={styles.imageSection}>
             <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-              {editingFood?.image ? (
+              {editingFood?.image && editingFood.image.trim() !== '' ? (
                 <Image source={{ uri: editingFood.image }} style={styles.previewImage} />
               ) : (
                 <View style={styles.imagePlaceholder}>
@@ -591,7 +588,14 @@ export default function AdminDashboard() {
         data={foodItems}
         renderItem={({ item }) => (
           <View style={styles.foodItem}>
-            <Image source={{ uri: item.image }} style={styles.foodImage} />
+            <Image 
+                source={{ 
+                  uri: item.image && item.image.trim() !== '' 
+                    ? item.image 
+                    : 'https://via.placeholder.com/100x100?text=No+Image' 
+                }} 
+                style={styles.foodImage} 
+              />
             <View style={styles.foodInfo}>
               <Text style={styles.foodName}>{item.name}</Text>
               <Text style={styles.foodPrice}>R{item.price}</Text>
@@ -1045,11 +1049,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 2,
   },
-  statusText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
   statusPercentage: {
     backgroundColor: '#F8FAFC',
     paddingHorizontal: 8,
@@ -1444,5 +1443,28 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     color: Colors.textSecondary,
     marginTop: 8,
+  },
+  // Missing styles for admin dashboard
+  actionButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: Colors.background,
+    marginLeft: 8,
+  },
+  infoForm: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  deliveryAddress: {
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  paymentMethod: {
+    fontSize: Typography.sm,
+    color: Colors.textSecondary,
+    marginBottom: 4,
   },
 });

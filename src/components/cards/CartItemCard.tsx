@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { CartItem } from '../../context/CartContext';
 
@@ -63,7 +63,14 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
+      <Image 
+        source={{ 
+          uri: item.image && item.image.trim() !== '' 
+            ? item.image 
+            : 'https://via.placeholder.com/60x60?text=No+Image' 
+        }} 
+        style={styles.itemImage} 
+      />
       
       <View style={styles.itemContent}>
         <View style={styles.itemHeader}>

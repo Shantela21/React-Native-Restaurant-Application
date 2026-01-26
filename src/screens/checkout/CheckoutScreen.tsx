@@ -76,7 +76,7 @@ export default function CheckoutScreen({ navigation }: Props) {
     setLoading(true);
     try {
       const orderData = {
-        userId: user.id,
+        userId: user.uid,
         items,
         totalAmount: getTotalPrice(),
         deliveryAddress,
