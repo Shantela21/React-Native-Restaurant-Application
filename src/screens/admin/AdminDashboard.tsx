@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -14,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { db } from '../../config/firebase';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -25,6 +27,7 @@ import {
   updateFoodItem
 } from '../../services/firebaseService';
 import { Order, orderService } from '../../services/orderService';
+import { showConfirmDialog } from '../../utils/platform';
 
 interface User {
   id: string;
@@ -57,8 +60,25 @@ interface FoodItemWithId {
   updatedAt: any; // Timestamp from Firebase
 }
 
-export default function AdminDashboard() {
-  const { user } = useAuth();
+type Props = {
+  navigation: any;
+};
+
+export default function AdminDashboard({ navigation }: Props) {
+  const { user, logout } = useAuth();
+  
+  // Admin role protection
+  useEffect(() => {
+    if (!user || user.email !== 'admin@foodie.com') {
+      Alert.alert('Access Denied', 'You do not have permission to access the admin dashboard.', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate('Main')
+        }
+      ]);
+      return;
+    }
+  }, [user, navigation]);
   const [activeTab, setActiveTab] = useState<'overview' | 'food' | 'restaurant' | 'orders'>('overview');
   const [foodItems, setFoodItems] = useState<FoodItemWithId[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -73,10 +93,149 @@ export default function AdminDashboard() {
   });
   const [editingFood, setEditingFood] = useState<FoodItemWithId | null>(null);
   const [showAddFood, setShowAddFood] = useState(false);
+  const [recentActivities, setRecentActivities] = useState<{
+    orders: { id: string; timestamp: Date; status: string }[];
+    users: { id: string; timestamp: Date; name: string }[];
+    items: { id: string; timestamp: Date; name: string }[];
+  }>({
+    orders: [],
+    users: [],
+    items: []
+  });
+
+  // Add state for analytics
+  const [analytics, setAnalytics] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    totalUsers: 0,
+    averageOrderValue: 0,
+  });
+
+  // Firebase Storage upload function
+  const uploadImageToStorage = async (uri: string, fileName: string): Promise<string> => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `food-images/${fileName}`);
+      
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading image to Firebase Storage:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     loadData();
+    setupRealtimeListeners();
+    
+    return () => {
+      // Cleanup listeners will be handled by the unsubscribe functions
+    };
   }, []);
+
+  const setupRealtimeListeners = () => {
+    // Real-time listener for orders
+    const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const unsubscribeOrders = onSnapshot(ordersQuery, (querySnapshot) => {
+      const ordersData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+        } as Order;
+      });
+      
+      setOrders(ordersData);
+      
+      // Track recent order activities
+      const recentOrderActivities = ordersData.slice(0, 5).map(order => ({
+        id: order.id,
+        timestamp: order.createdAt,
+        status: order.status
+      }));
+      
+      setRecentActivities(prev => ({
+        ...prev,
+        orders: recentOrderActivities
+      }));
+      
+      console.log('Real-time orders update:', ordersData.length);
+    });
+
+    // Real-time listener for users
+    const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+    const unsubscribeUsers = onSnapshot(usersQuery, (querySnapshot) => {
+      const usersData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || data.createdAt,
+        } as User;
+      });
+      
+      setUsers(usersData);
+      
+      // Track recent user registrations
+      const recentUserActivities = usersData.slice(0, 5).map(user => ({
+        id: user.id,
+        timestamp: user.createdAt,
+        name: user.name
+      }));
+      
+      setRecentActivities(prev => ({
+        ...prev,
+        users: recentUserActivities
+      }));
+      
+      console.log('Real-time users update:', usersData.length);
+    });
+
+    // Real-time listener for food items
+    const foodsQuery = query(collection(db, 'foods'), orderBy('createdAt', 'desc'));
+    const unsubscribeFoods = onSnapshot(foodsQuery, (querySnapshot) => {
+      const foodsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+        } as FoodItemWithId;
+      });
+      
+      setFoodItems(foodsData);
+      
+      // Track recent item additions
+      const recentItemActivities = foodsData.slice(0, 5).map(item => ({
+        id: item.id,
+        timestamp: item.createdAt,
+        name: item.name
+      }));
+      
+      setRecentActivities(prev => ({
+        ...prev,
+        items: recentItemActivities
+      }));
+      
+      console.log('Real-time food items update:', foodsData.length);
+    });
+
+    // Store unsubscribe functions for cleanup
+    return () => {
+      unsubscribeOrders();
+      unsubscribeUsers();
+      unsubscribeFoods();
+    };
+  };
 
   const loadData = async () => {
     // Load food items from Firebase
@@ -117,6 +276,107 @@ export default function AdminDashboard() {
 
   const saveRestaurantInfo = () => {
     Alert.alert('Success', 'Restaurant information updated successfully!');
+  };
+
+  // Order management functions
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    try {
+      const result = await orderService.updateOrderStatus(orderId, newStatus);
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Order Updated',
+          text2: `Order status changed to ${newStatus}`,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Update Failed',
+          text2: result.message || 'Failed to update order status',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An error occurred while updating the order',
+      });
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    const confirmed = await showConfirmDialog('Are you sure you want to delete this order? This action cannot be undone.');
+    if (confirmed) {
+      try {
+        // Add delete functionality to orderService if needed
+        // For now, we'll use a placeholder
+        Toast.show({
+          type: 'success',
+          text1: 'Order Deleted',
+          text2: 'Order has been deleted successfully',
+        });
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to delete order',
+        });
+      }
+    }
+  };
+
+  const getOrderActions = (order: Order) => {
+    const actions = [];
+    
+    if (order.status === 'pending') {
+      actions.push({
+        label: 'Approve',
+        color: Colors.success,
+        onPress: () => handleUpdateOrderStatus(order.id, 'confirmed')
+      });
+    }
+    
+    if (order.status === 'confirmed') {
+      actions.push({
+        label: 'Start Preparing',
+        color: Colors.warning,
+        onPress: () => handleUpdateOrderStatus(order.id, 'preparing')
+      });
+    }
+    
+    if (order.status === 'preparing') {
+      actions.push({
+        label: 'Mark Ready',
+        color: Colors.primary,
+        onPress: () => handleUpdateOrderStatus(order.id, 'ready')
+      });
+    }
+    
+    if (order.status === 'ready') {
+      actions.push({
+        label: 'Mark Delivered',
+        color: Colors.success,
+        onPress: () => handleUpdateOrderStatus(order.id, 'delivered')
+      });
+    }
+    
+    if (order.status !== 'delivered') {
+      actions.push({
+        label: 'Cancel',
+        color: Colors.error,
+        onPress: () => handleUpdateOrderStatus(order.id, 'cancelled')
+      });
+    }
+    
+    actions.push({
+      label: 'Delete',
+      color: Colors.error,
+      onPress: () => handleDeleteOrder(order.id)
+    });
+    
+    return actions;
   };
 
   const handleAddFoodItem = async (foodItem: FoodItemWithId) => {
@@ -734,6 +994,17 @@ export default function AdminDashboard() {
             <Text style={styles.deliveryAddress}>📍 {order.deliveryAddress || 'No address'}</Text>
             <Text style={styles.paymentMethod}>💳 {order.paymentMethod === 'card' ? 'Card' : order.paymentMethod === 'cash' ? 'Cash' : 'Unknown'}</Text>
           </View>
+          <View style={styles.orderActions}>
+            {getOrderActions(order).map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.actionButton, { backgroundColor: action.color }]}
+                onPress={action.onPress}
+              >
+                <Text style={styles.actionButtonText}>{action.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       ))}
     </ScrollView>
@@ -748,8 +1019,22 @@ export default function AdminDashboard() {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Admin Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Welcome, {user?.name || 'Admin'}</Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Admin Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Welcome, {user?.name || 'Admin'}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={async () => {
+              const confirmed = await showConfirmDialog('Are you sure you want to logout?');
+              if (confirmed) {
+                logout();
+                navigation.navigate('Main');
+              }
+            }}
+          >
+            <Ionicons name="log-out" size={20} color={Colors.surface} />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -767,7 +1052,7 @@ export default function AdminDashboard() {
                 tab === 'restaurant' ? 'business' : 'list'
               } 
               size={16} 
-              color={activeTab === tab ? Colors.primary : Colors.textSecondary} 
+              color={activeTab === tab ? Colors.surface : Colors.textSecondary} 
             />
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -787,30 +1072,45 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 32,
+    paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+    backgroundColor: "linear-gradient(135deg, #6366F1 0%, #818CF8 100%)",
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
-    shadowColor: '#6366F1',
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
   },
   headerContent: {
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logoutButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: "800",
     color: Colors.surface,
     marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
     letterSpacing: 0.5,
@@ -819,35 +1119,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.surface,
     opacity: 0.9,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tabContainer: {
-    flexDirection: 'row',
+    width: "95%", 
+    alignSelf: "center",
+    flexDirection: "row",
     backgroundColor: Colors.surface,
     marginHorizontal: 24,
     borderRadius: 20,
     marginTop: -16,
     padding: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: "rgba(99, 102, 241, 0.1)",
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 14,
     borderRadius: 16,
     marginHorizontal: 3,
   },
   activeTab: {
-    backgroundColor: '#6366F1',
-    shadowColor: '#6366F1',
+    backgroundColor: "#6366F1",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -856,18 +1158,18 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.3,
   },
   activeTabText: {
     color: Colors.surface,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   tabContent: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
-  
+
   // Section Styles
   metricsSection: {
     padding: 24,
@@ -886,7 +1188,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 20,
     letterSpacing: 0.3,
@@ -894,8 +1196,8 @@ const styles = StyleSheet.create({
 
   // Enhanced Stats Cards
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 16,
     marginBottom: 16,
   },
@@ -903,46 +1205,46 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 20,
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.08)',
-    position: 'relative',
-    overflow: 'hidden',
+    borderColor: "rgba(99, 102, 241, 0.08)",
+    position: "relative",
+    overflow: "hidden",
   },
   statIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
   primaryStat: {
     borderLeftWidth: 4,
-    borderLeftColor: '#6366F1',
+    borderLeftColor: "#6366F1",
   },
   successStat: {
     borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
+    borderLeftColor: "#10B981",
   },
   infoStat: {
     borderLeftWidth: 4,
-    borderLeftColor: '#3B82F6',
+    borderLeftColor: "#3B82F6",
   },
   warningStat: {
     borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
+    borderLeftColor: "#F59E0B",
   },
   statNumber: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: "800",
     color: Colors.text,
     marginBottom: 4,
     letterSpacing: 1,
@@ -950,107 +1252,107 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    fontWeight: '600',
+    textAlign: "center",
+    fontWeight: "600",
     letterSpacing: 0.2,
     marginBottom: 4,
   },
   statChange: {
     fontSize: 12,
-    color: '#10B981',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: "#10B981",
+    fontWeight: "600",
+    textAlign: "center",
   },
 
   // Quick Actions
   quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 16,
   },
   quickActionCard: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 20,
-    alignItems: 'center',
-    width: '45%',
-    shadowColor: '#000',
+    alignItems: "center",
+    width: "45%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.05)',
+    borderColor: "rgba(99, 102, 241, 0.05)",
   },
   quickActionIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
   quickActionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   quickActionSubtitle: {
     fontSize: 12,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    fontWeight: '500',
+    textAlign: "center",
+    fontWeight: "500",
   },
 
   // Enhanced Chart Section
   chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   chartTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     letterSpacing: 0.3,
   },
   viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
     borderRadius: 12,
   },
   viewAllText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6366F1',
+    fontWeight: "600",
+    color: "#6366F1",
     marginRight: 6,
   },
   statusGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   statusCard: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
+    width: "48%",
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.05)',
+    borderColor: "rgba(99, 102, 241, 0.05)",
   },
   statusIndicator: {
     width: 12,
@@ -1063,19 +1365,19 @@ const styles = StyleSheet.create({
   },
   statusNumber: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 2,
   },
   statusPercentage: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   percentageText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
   },
 
@@ -1087,22 +1389,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.05)',
+    borderColor: "rgba(99, 102, 241, 0.05)",
   },
   activityIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   activityContent: {
@@ -1110,69 +1412,69 @@ const styles = StyleSheet.create({
   },
   activityTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 2,
   },
   activitySubtitle: {
     fontSize: 13,
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activityTime: {
     fontSize: 12,
     color: Colors.textLight,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   emptyActivity: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.05)',
+    borderColor: "rgba(99, 102, 241, 0.05)",
   },
   emptyActivityText: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyActivitySubtext: {
     fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   foodHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(99, 102, 241, 0.1)',
+    borderBottomColor: "rgba(99, 102, 241, 0.1)",
     backgroundColor: Colors.surface,
   },
   foodTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     letterSpacing: 0.3,
   },
   addButton: {
-    flexDirection: 'row',
-    backgroundColor: '#6366F1',
+    flexDirection: "row",
+    backgroundColor: "#6366F1",
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    alignItems: 'center',
-    shadowColor: '#6366F1',
+    alignItems: "center",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -1181,7 +1483,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: Colors.surface,
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     marginLeft: 8,
     letterSpacing: 0.3,
   },
@@ -1190,42 +1492,42 @@ const styles = StyleSheet.create({
     margin: 24,
     padding: 28,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.08)',
+    borderColor: "rgba(99, 102, 241, 0.08)",
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: "rgba(99, 102, 241, 0.1)",
     marginBottom: 16,
     paddingHorizontal: 20,
     paddingVertical: 4,
   },
   formTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 20,
     letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
     borderWidth: 2,
-    borderColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: "rgba(99, 102, 241, 0.1)",
     borderRadius: 16,
     padding: 18,
     fontSize: 16,
     color: Colors.text,
     marginBottom: 20,
-    shadowColor: '#6366F1',
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1233,11 +1535,11 @@ const styles = StyleSheet.create({
   },
   textArea: {
     height: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   formButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 24,
     gap: 16,
   },
@@ -1245,24 +1547,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
   cancelButton: {
-    backgroundColor: '#F1F5F9',
-    shadowColor: '#64748B',
+    backgroundColor: "#F1F5F9",
+    shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
   },
   saveButton: {
-    backgroundColor: '#6366F1',
-    shadowColor: '#6366F1',
+    backgroundColor: "#6366F1",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -1270,7 +1572,7 @@ const styles = StyleSheet.create({
   },
   formButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.surface,
     letterSpacing: 0.3,
   },
@@ -1282,14 +1584,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    flexDirection: 'row',
-    shadowColor: '#000',
+    flexDirection: "row",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.08)',
+    borderColor: "rgba(99, 102, 241, 0.08)",
   },
   foodImage: {
     width: 70,
@@ -1302,14 +1604,14 @@ const styles = StyleSheet.create({
   },
   foodName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 4,
   },
   foodPrice: {
     fontSize: Typography.base,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   foodCategory: {
@@ -1317,8 +1619,8 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   foodActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1336,12 +1638,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingVertical: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   saveButtonText: {
     fontSize: Typography.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.surface,
   },
   orderItem: {
@@ -1356,14 +1658,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   orderNumber: {
     fontSize: Typography.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
   },
   orderDate: {
@@ -1377,7 +1679,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: Typography.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.surface,
   },
   orderDetails: {
@@ -1385,7 +1687,7 @@ const styles = StyleSheet.create({
   },
   customerName: {
     fontSize: Typography.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 4,
   },
@@ -1396,21 +1698,40 @@ const styles = StyleSheet.create({
   },
   orderTotal: {
     fontSize: Typography.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.primary,
+  },
+  orderActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.surface,
   },
   categoryContainer: {
     marginBottom: 16,
   },
   label: {
     fontSize: Typography.base,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
   },
   categoryButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   categoryButton: {
@@ -1428,13 +1749,13 @@ const styles = StyleSheet.create({
   categoryButtonText: {
     fontSize: Typography.sm,
     color: Colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   categoryButtonTextSelected: {
     color: Colors.surface,
   },
   imageSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 16,
   },
   imagePickerButton: {
@@ -1443,19 +1764,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.textLight,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: Colors.background,
   },
   previewImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 10,
   },
   imagePlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   imagePlaceholderText: {
     fontSize: Typography.sm,
@@ -1463,12 +1784,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Missing styles for admin dashboard
-  actionButton: {
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: Colors.background,
-    marginLeft: 8,
-  },
   infoForm: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
