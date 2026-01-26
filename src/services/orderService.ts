@@ -1,5 +1,4 @@
-
-import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 export interface Order {
@@ -73,10 +72,16 @@ class OrderService {
       );
       const querySnapshot = await getDocs(ordersQuery);
       
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Order));
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Convert Firebase Timestamps to JavaScript Dates
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+        } as Order;
+      });
     } catch (error) {
       console.error("Error fetching user orders:", error);
       return [];
@@ -87,9 +92,13 @@ class OrderService {
     try {
       const orderDoc = await getDoc(doc(db, "orders", orderId));
       if (orderDoc.exists()) {
+        const data = orderDoc.data();
+        // Convert Firebase Timestamps to JavaScript Dates
         return {
           id: orderDoc.id,
-          ...orderDoc.data()
+          ...data,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
         } as Order;
       }
       return undefined;
@@ -132,10 +141,24 @@ class OrderService {
       );
       const querySnapshot = await getDocs(ordersQuery);
       
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Order));
+      const orders = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Raw order data from Firestore:', data);
+        
+        // Convert Firebase Timestamps to JavaScript Dates
+        const order = {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+        } as Order;
+        
+        console.log('Processed order:', order);
+        return order;
+      });
+      
+      console.log('Final orders array:', orders);
+      return orders;
     } catch (error) {
       console.error("Error fetching all orders:", error);
       return [];

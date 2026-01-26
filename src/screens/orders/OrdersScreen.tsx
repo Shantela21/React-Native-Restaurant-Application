@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
@@ -27,8 +27,13 @@ export default function OrdersScreen() {
   const fetchOrders = async () => {
     try {
       if (user) {
+        console.log('Fetching orders for user:', user.uid);
         const userOrders = await orderService.getUserOrders(user.uid);
+        console.log('User orders fetched:', userOrders);
+        console.log('User orders count:', userOrders.length);
         setOrders(userOrders);
+      } else {
+        console.log('No user found for fetching orders');
       }
     } catch (error) {
       console.error('Error fetching orders:', error);

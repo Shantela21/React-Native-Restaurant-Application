@@ -87,6 +87,8 @@ export default function AdminDashboard() {
 
     // Load orders from Firebase using orderService
     const ordersData = await orderService.getAllOrders();
+    console.log('Orders loaded in admin dashboard:', ordersData);
+    console.log('Orders count:', ordersData.length);
     setOrders(ordersData);
 
     // Load users from Firebase
@@ -722,15 +724,15 @@ export default function AdminDashboard() {
                            order.status === 'preparing' ? Colors.warning :
                            order.status === 'ready' ? Colors.primary : Colors.error
             }]}>
-              <Text style={styles.statusText}>{order.status.toUpperCase()}</Text>
+              <Text style={styles.statusText}>{order.status ? order.status.toUpperCase() : 'UNKNOWN'}</Text>
             </View>
           </View>
           <View style={styles.orderDetails}>
-            <Text style={styles.customerName}>User ID: {order.userId}</Text>
-            <Text style={styles.orderItems}>{order.items.map(item => item.name).join(', ')}</Text>
-            <Text style={styles.orderTotal}>R{order.totalAmount}</Text>
-            <Text style={styles.deliveryAddress}>📍 {order.deliveryAddress}</Text>
-            <Text style={styles.paymentMethod}>💳 {order.paymentMethod === 'card' ? 'Card' : 'Cash'}</Text>
+            <Text style={styles.customerName}>User ID: {order.userId || 'Unknown'}</Text>
+            <Text style={styles.orderItems}>{order.items && order.items.length > 0 ? order.items.map(item => item.name).join(', ') : 'No items'}</Text>
+            <Text style={styles.orderTotal}>R{order.totalAmount || 0}</Text>
+            <Text style={styles.deliveryAddress}>📍 {order.deliveryAddress || 'No address'}</Text>
+            <Text style={styles.paymentMethod}>💳 {order.paymentMethod === 'card' ? 'Card' : order.paymentMethod === 'cash' ? 'Cash' : 'Unknown'}</Text>
           </View>
         </View>
       ))}

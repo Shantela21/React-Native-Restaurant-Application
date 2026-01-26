@@ -17,7 +17,7 @@ import FoodCard from "../../components/food/FoodCard";
 import { Colors, Typography } from "../../constants";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { getFoodItems } from '../../services/firebaseService';
+import { getFoodItems, subscribeToFoodItems } from '../../services/firebaseService';
 
 type RootStackParamList = {
   Main: undefined;
