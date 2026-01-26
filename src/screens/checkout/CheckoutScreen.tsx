@@ -132,12 +132,12 @@ export default function CheckoutScreen({ navigation }: Props) {
       </View>
       <View style={styles.totalRow}>
         <Text style={styles.totalLabel}>Delivery Fee:</Text>
-        <Text style={styles.totalValue}>R2.99</Text>
+        <Text style={styles.totalValue}>R9.99</Text>
       </View>
       <View style={[styles.totalRow, styles.grandTotal]}>
         <Text style={styles.totalLabel}>Total:</Text>
         <Text style={styles.totalValue}>
-          R{(getTotalPrice() + 2.99).toFixed(2)}
+          R{(getTotalPrice() + 9.99).toFixed(2)}
         </Text>
       </View>
     </View>

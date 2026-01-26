@@ -1,14 +1,14 @@
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    orderBy,
-    query,
-    Timestamp,
-    updateDoc
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -46,7 +46,7 @@ export interface FirebaseRestaurantInfo {
 }
 
 // Food Items CRUD operations
-export const foodItemsCollection = collection(db, 'foodItems');
+export const foodItemsCollection = collection(db, 'foods');
 
 export const addFoodItem = async (foodItem: Omit<FirebaseFoodItem, 'createdAt' | 'updatedAt'>) => {
   try {
@@ -149,6 +149,23 @@ export const updateOrderStatus = async (id: string, status: FirebaseOrder['statu
 
 // Restaurant info operations
 export const restaurantInfoCollection = collection(db, 'restaurantInfo');
+
+// Users collection operations
+export const usersCollection = collection(db, 'users');
+
+export const getUsers = async () => {
+  try {
+    const querySnapshot = await getDocs(usersCollection);
+    const users = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as any[];
+    return { success: true, data: users };
+  } catch (error) {
+    console.error('Error getting users:', error);
+    return { success: false, error: error as Error, data: [] };
+  }
+};
 
 export const getRestaurantInfo = async () => {
   try {

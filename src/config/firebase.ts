@@ -1,16 +1,17 @@
 // src/config/firebase.ts
+import { FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_AUTH_DOMAIN, FIREBASE_MESSAGING_SENDER_ID, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET } from '@env';
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDlmubIlH1oD1Kjmu9RT2uCwYTSPgn8Hv4",
-  authDomain: "reactnativerestuarantapp.firebaseapp.com",
-  projectId: "reactnativerestuarantapp",
-  storageBucket: "reactnativerestuarantapp.appspot.com",
-  messagingSenderId: "842238739226",
-  appId: "1:842238739226:web:4da6b0292a4d4208f562a3",
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
   measurementId: "G-F9E4E67TZY",
 };
 

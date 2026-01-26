@@ -22,16 +22,19 @@ import {
   getFoodItems,
   getOrders,
   getRestaurantInfo,
-  updateFoodItem,
+  getUsers,
+  updateFoodItem
 } from '../../services/firebaseService';
+import { Order } from '../../services/orderService';
 
-interface Order {
+interface User {
   id: string;
-  customerName: string;
-  items: string[];
-  total: number;
-  date: string;
-  status: 'pending' | 'preparing' | 'ready' | 'delivered';
+  name: string;
+  surname: string;
+  email: string;
+  phone: string;
+  address: string;
+  createdAt: any;
 }
 
 interface RestaurantInfo {
@@ -60,6 +63,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'food' | 'restaurant' | 'orders'>('overview');
   const [foodItems, setFoodItems] = useState<FoodItemWithId[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo>({
     name: 'Foodie Restaurant',
     address: '123 Main St, City',
@@ -86,6 +90,12 @@ export default function AdminDashboard() {
     const ordersResult = await getOrders();
     if (ordersResult.success) {
       setOrders(ordersResult.data);
+    }
+
+    // Load users from Firebase
+    const usersResult = await getUsers();
+    if (usersResult.success) {
+      setUsers(usersResult.data);
     }
 
     // Load restaurant info from Firebase
@@ -267,43 +277,192 @@ export default function AdminDashboard() {
   };
 
   const renderOverviewTab = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{foodItems.length}</Text>
-          <Text style={styles.statLabel}>Food Items</Text>
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+      {/* Key Metrics Section */}
+      <View style={styles.metricsSection}>
+        <Text style={styles.sectionTitle}>Key Metrics</Text>
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, styles.primaryStat]}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="restaurant" size={24} color={Colors.surface} />
+            </View>
+            <Text style={styles.statNumber}>{foodItems.length}</Text>
+            <Text style={styles.statLabel}>Menu Items</Text>
+            <Text style={styles.statChange}>Available now</Text>
+          </View>
+          <View style={[styles.statCard, styles.successStat]}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="cart" size={24} color={Colors.surface} />
+            </View>
+            <Text style={styles.statNumber}>{orders.length}</Text>
+            <Text style={styles.statLabel}>Total Orders</Text>
+            <Text style={styles.statChange}>All time</Text>
+          </View>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{orders.length}</Text>
-          <Text style={styles.statLabel}>Total Orders</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>
-            R{orders.reduce((sum, order) => sum + order.total, 0)}
-          </Text>
-          <Text style={styles.statLabel}>Total Revenue</Text>
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, styles.infoStat]}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="people" size={24} color={Colors.surface} />
+            </View>
+            <Text style={styles.statNumber}>{users.length}</Text>
+            <Text style={styles.statLabel}>Customers</Text>
+            <Text style={styles.statChange}>Registered users</Text>
+          </View>
+          <View style={[styles.statCard, styles.warningStat]}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="cash" size={24} color={Colors.surface} />
+            </View>
+            <Text style={styles.statNumber}>
+              R{orders.reduce((sum, order) => sum + order.totalAmount, 0)}
+            </Text>
+            <Text style={styles.statLabel}>Revenue</Text>
+            <Text style={styles.statChange}>Total sales</Text>
+          </View>
         </View>
       </View>
 
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Order Status Distribution</Text>
-        <View style={styles.chartLegend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: Colors.success }]} />
-            <Text style={styles.legendText}>Delivered: {orders.filter(o => o.status === 'delivered').length}</Text>
+      {/* Quick Actions Section */}
+      <View style={styles.quickActionsSection}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.quickActionsGrid}>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => setShowAddFood(true)}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="add-circle" size={28} color="#6366F1" />
+            </View>
+            <Text style={styles.quickActionTitle}>Add Item</Text>
+            <Text style={styles.quickActionSubtitle}>New menu item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickActionCard}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="bar-chart" size={28} color="#10B981" />
+            </View>
+            <Text style={styles.quickActionTitle}>Analytics</Text>
+            <Text style={styles.quickActionSubtitle}>View reports</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickActionCard}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="notifications" size={28} color="#F59E0B" />
+            </View>
+            <Text style={styles.quickActionTitle}>Notifications</Text>
+            <Text style={styles.quickActionSubtitle}>Send alerts</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickActionCard}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="settings" size={28} color="#EF4444" />
+            </View>
+            <Text style={styles.quickActionTitle}>Settings</Text>
+            <Text style={styles.quickActionSubtitle}>Configure</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Order Status Overview */}
+      <View style={styles.chartSection}>
+        <View style={styles.chartHeader}>
+          <Text style={styles.chartTitle}>Order Status Overview</Text>
+          <TouchableOpacity style={styles.viewAllButton}>
+            <Text style={styles.viewAllText}>View All</Text>
+            <Ionicons name="arrow-forward" size={16} color="#6366F1" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.statusGrid}>
+          <View style={styles.statusCard}>
+            <View style={[styles.statusIndicator, { backgroundColor: '#10B981' }]} />
+            <View style={styles.statusContent}>
+              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'delivered').length}</Text>
+              <Text style={styles.statusText}>Delivered</Text>
+            </View>
+            <View style={styles.statusPercentage}>
+              <Text style={styles.percentageText}>
+                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'delivered').length / orders.length) * 100) : 0}%
+              </Text>
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: Colors.warning }]} />
-            <Text style={styles.legendText}>Preparing: {orders.filter(o => o.status === 'preparing').length}</Text>
+          <View style={styles.statusCard}>
+            <View style={[styles.statusIndicator, { backgroundColor: '#F59E0B' }]} />
+            <View style={styles.statusContent}>
+              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'preparing').length}</Text>
+              <Text style={styles.statusText}>Preparing</Text>
+            </View>
+            <View style={styles.statusPercentage}>
+              <Text style={styles.percentageText}>
+                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'preparing').length / orders.length) * 100) : 0}%
+              </Text>
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: Colors.primary }]} />
-            <Text style={styles.legendText}>Ready: {orders.filter(o => o.status === 'ready').length}</Text>
+          <View style={styles.statusCard}>
+            <View style={[styles.statusIndicator, { backgroundColor: '#6366F1' }]} />
+            <View style={styles.statusContent}>
+              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'ready').length}</Text>
+              <Text style={styles.statusText}>Ready</Text>
+            </View>
+            <View style={styles.statusPercentage}>
+              <Text style={styles.percentageText}>
+                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'ready').length / orders.length) * 100) : 0}%
+              </Text>
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: Colors.error }]} />
-            <Text style={styles.legendText}>Pending: {orders.filter(o => o.status === 'pending').length}</Text>
+          <View style={styles.statusCard}>
+            <View style={[styles.statusIndicator, { backgroundColor: '#EF4444' }]} />
+            <View style={styles.statusContent}>
+              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'pending').length}</Text>
+              <Text style={styles.statusText}>Pending</Text>
+            </View>
+            <View style={styles.statusPercentage}>
+              <Text style={styles.percentageText}>
+                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'pending').length / orders.length) * 100) : 0}%
+              </Text>
+            </View>
           </View>
+        </View>
+      </View>
+
+      {/* Recent Activity */}
+      <View style={styles.activitySection}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.activityList}>
+          {orders.length > 0 && orders.slice(-3).reverse().map((order, index) => (
+            <View key={order.id} style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: '#10B981' }]}>
+                <Ionicons name="checkmark" size={16} color={Colors.surface} />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityTitle}>New order placed</Text>
+                <Text style={styles.activitySubtitle}>Order #{order.id} - R{order.totalAmount}.00</Text>
+              </View>
+              <Text style={styles.activityTime}>Just now</Text>
+            </View>
+          ))}
+          {users.length > 0 && users.slice(-2).reverse().map((user, index) => (
+            <View key={user.id} style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: '#6366F1' }]}>
+                <Ionicons name="person-add" size={16} color={Colors.surface} />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityTitle}>New customer registered</Text>
+                <Text style={styles.activitySubtitle}>{user.email}</Text>
+              </View>
+              <Text style={styles.activityTime}>Just now</Text>
+            </View>
+          ))}
+          {foodItems.length > 0 && foodItems.slice(-1).reverse().map((item, index) => (
+            <View key={item.id} style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: '#F59E0B' }]}>
+                <Ionicons name="star" size={16} color={Colors.surface} />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityTitle}>New menu item added</Text>
+                <Text style={styles.activitySubtitle}>{item.name}</Text>
+              </View>
+              <Text style={styles.activityTime}>Just now</Text>
+            </View>
+          ))}
+          {orders.length === 0 && users.length === 0 && foodItems.length === 0 && (
+            <View style={styles.emptyActivity}>
+              <Text style={styles.emptyActivityText}>No recent activity</Text>
+              <Text style={styles.emptyActivitySubtext}>Activity will appear here when users interact with the app</Text>
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>
@@ -537,7 +696,7 @@ export default function AdminDashboard() {
         <View key={order.id} style={styles.orderItem}>
           <View style={styles.orderHeader}>
             <Text style={styles.orderNumber}>Order #{order.id}</Text>
-            <Text style={styles.orderDate}>{order.date}</Text>
+            <Text style={styles.orderDate}>{order.createdAt.toLocaleDateString()}</Text>
             <View style={[styles.statusBadge, {
               backgroundColor: order.status === 'delivered' ? Colors.success :
                            order.status === 'preparing' ? Colors.warning :
@@ -547,9 +706,11 @@ export default function AdminDashboard() {
             </View>
           </View>
           <View style={styles.orderDetails}>
-            <Text style={styles.customerName}>{order.customerName}</Text>
-            <Text style={styles.orderItems}>{order.items.join(', ')}</Text>
-            <Text style={styles.orderTotal}>R{order.total}</Text>
+            <Text style={styles.customerName}>User ID: {order.userId}</Text>
+            <Text style={styles.orderItems}>{order.items.map(item => item.name).join(', ')}</Text>
+            <Text style={styles.orderTotal}>R{order.totalAmount}</Text>
+            <Text style={styles.deliveryAddress}>📍 {order.deliveryAddress}</Text>
+            <Text style={styles.paymentMethod}>💳 {order.paymentMethod === 'card' ? 'Card' : 'Cash'}</Text>
           </View>
         </View>
       ))}
@@ -604,298 +765,527 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.primary,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    backgroundColor: 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
   headerContent: {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: Typography.xxl,
+    fontSize: 32,
     fontWeight: '800',
     color: Colors.surface,
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 0.5,
   },
   headerSubtitle: {
-    fontSize: Typography.base,
+    fontSize: 16,
     color: Colors.surface,
     opacity: 0.9,
+    fontWeight: '500',
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    marginTop: -12,
-    padding: 4,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginHorizontal: 24,
+    borderRadius: 20,
+    marginTop: -16,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.1)',
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginHorizontal: 2,
+    paddingVertical: 14,
+    borderRadius: 16,
+    marginHorizontal: 3,
   },
   activeTab: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
   },
   tabText: {
-    fontSize: Typography.sm,
+    fontSize: 14,
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   activeTabText: {
     color: Colors.surface,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   tabContent: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
+  
+  // Section Styles
+  metricsSection: {
+    padding: 24,
+  },
+  quickActionsSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  chartSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  activitySection: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 20,
+    letterSpacing: 0.3,
+  },
+
+  // Enhanced Stats Cards
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 20,
-    gap: 12,
+    justifyContent: 'space-between',
+    gap: 16,
+    marginBottom: 16,
   },
   statCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.08)',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  primaryStat: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#6366F1',
+  },
+  successStat: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  infoStat: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  warningStat: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: Colors.text,
+    marginBottom: 4,
+    letterSpacing: 1,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    marginBottom: 4,
+  },
+  statChange: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  // Quick Actions
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  quickActionCard: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    flex: 1,
-    shadowColor: Colors.shadow,
+    width: '45%',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: Colors.overlayLight,
+    borderColor: 'rgba(99, 102, 241, 0.05)',
   },
-  statNumber: {
-    fontSize: Typography.xxl,
-    fontWeight: '800',
-    color: Colors.primary,
-    marginBottom: 6,
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  statLabel: {
-    fontSize: Typography.sm,
+  quickActionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  quickActionSubtitle: {
+    fontSize: 12,
     color: Colors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
   },
-  chartContainer: {
-    margin: 20,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: Colors.overlayLight,
+
+  // Enhanced Chart Section
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   chartTitle: {
-    fontSize: Typography.lg,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.text,
-    marginBottom: 16,
+    letterSpacing: 0.3,
   },
-  chartLegend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-  },
-  legendItem: {
+  viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 12,
   },
-  legendColor: {
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6366F1',
+    marginRight: 6,
+  },
+  statusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statusCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.05)',
+  },
+  statusIndicator: {
     width: 12,
     height: 12,
-    borderRadius: 2,
-    marginRight: 8,
+    borderRadius: 6,
+    marginRight: 12,
   },
-  legendText: {
-    fontSize: Typography.sm,
+  statusContent: {
+    flex: 1,
+  },
+  statusNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  statusText: {
+    fontSize: 13,
     color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  statusPercentage: {
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  percentageText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+
+  // Activity Section
+  activityList: {
+    gap: 12,
+  },
+  activityItem: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.05)',
+  },
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  activitySubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  activityTime: {
+    fontSize: 12,
+    color: Colors.textLight,
+    fontWeight: '500',
+  },
+  emptyActivity: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.05)',
+  },
+  emptyActivityText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyActivitySubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   foodHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.overlayLight,
+    borderBottomColor: 'rgba(99, 102, 241, 0.1)',
     backgroundColor: Colors.surface,
   },
   foodTitle: {
-    fontSize: Typography.lg,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.text,
+    letterSpacing: 0.3,
   },
   addButton: {
     flexDirection: 'row',
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: '#6366F1',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
   },
   addButtonText: {
     color: Colors.surface,
-    fontSize: Typography.sm,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     marginLeft: 8,
+    letterSpacing: 0.3,
   },
   addFoodForm: {
     backgroundColor: Colors.surface,
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    margin: 24,
+    padding: 28,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
-    borderColor: Colors.overlayLight,
+    borderColor: 'rgba(99, 102, 241, 0.08)',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.overlayLight,
-    marginBottom: 12,
-    paddingHorizontal: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(99, 102, 241, 0.1)',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
   },
   formTitle: {
-    fontSize: Typography.lg,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.text,
-    marginBottom: 12,
+    marginBottom: 20,
+    letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.overlayLight,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: Typography.base,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 16,
+    padding: 18,
+    fontSize: 16,
     color: Colors.text,
-    marginBottom: 16,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: 20,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: 'top',
   },
   formButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 12,
+    marginTop: 24,
+    gap: 16,
   },
   formButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cancelButton: {
-    backgroundColor: Colors.textLight,
-    shadowColor: Colors.textLight,
+    backgroundColor: '#F1F5F9',
+    shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   saveButton: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
   },
   formButtonText: {
-    fontSize: Typography.base,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.surface,
+    letterSpacing: 0.3,
   },
   foodList: {
-    padding: 20,
+    padding: 24,
   },
   foodItem: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     flexDirection: 'row',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.08)',
   },
   foodImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    marginRight: 16,
   },
   foodInfo: {
     flex: 1,
   },
   foodName: {
-    fontSize: Typography.lg,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.text,
     marginBottom: 4,
   },
@@ -912,27 +1302,6 @@ const styles = StyleSheet.create({
   foodActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: Typography.xl,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 20,
-  },
-  infoForm: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
