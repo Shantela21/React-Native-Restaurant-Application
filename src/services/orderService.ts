@@ -65,23 +65,48 @@ class OrderService {
 
   async getUserOrders(userId: string): Promise<Order[]> {
     try {
-      const ordersQuery = query(
-        collection(db, "orders"),
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(ordersQuery);
-      
-      return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        // Convert Firebase Timestamps to JavaScript Dates
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
-          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
-        } as Order;
-      });
+      // First try with the indexed query (more efficient)
+      try {
+        const ordersQuery = query(
+          collection(db, "orders"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(ordersQuery);
+        
+        return querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          // Convert Firebase Timestamps to JavaScript Dates
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+          } as Order;
+        });
+      } catch (indexError: any) {
+        // If index error, fallback to fetching all and filtering client-side
+        console.log('Index not found, using fallback method...');
+        const allOrdersQuery = query(collection(db, "orders"));
+        const querySnapshot = await getDocs(allOrdersQuery);
+        
+        const allOrders = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+          } as Order;
+        });
+        
+        // Filter by userId and sort on client side
+        const userOrders = allOrders
+          .filter(order => order.userId === userId)
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        
+        return userOrders;
+      }
     } catch (error) {
       console.error("Error fetching user orders:", error);
       return [];

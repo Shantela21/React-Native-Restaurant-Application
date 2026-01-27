@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
     marginRight: 10,
+    maxWidth: '48%',
   },
   fullInput: {
     flex: 1,

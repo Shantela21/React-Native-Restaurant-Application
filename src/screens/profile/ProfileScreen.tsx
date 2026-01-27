@@ -1,18 +1,19 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import CardDetailsInput from '../../components/inputs/CardDetailsInput';
 import { useAuth } from '../../context/AuthContext';
 import { showAlert, showConfirmDialog } from '../../utils/platform';
+import { Ionicons } from '@expo/vector-icons';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -118,8 +119,14 @@ export default function ProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
         <Text style={styles.title}>Profile</Text>
         <TouchableOpacity
           style={styles.logoutButton}
@@ -254,7 +261,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-   marginTop: 40,
+  },
+  contentContainer: {
+    marginTop: 40,
     padding: 20,
     justifyContent: 'center',
   },
@@ -272,10 +281,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
+    textAlign: 'center',
   },
   logoutButton: {
     padding: 8,
