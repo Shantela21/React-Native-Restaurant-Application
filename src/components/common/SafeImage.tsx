@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, ImageProps, View } from 'react-native';
 
 interface SafeImageProps extends Omit<ImageProps, 'source'> {
@@ -14,8 +14,20 @@ const SafeImage: React.FC<SafeImageProps> = ({
   style,
   ...imageProps
 }) => {
-  // Check if URI is valid (not empty, not undefined, not just whitespace)
-  const isValidUri = uri && uri.trim() !== '';
+  const [imageError, setImageError] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+
+  // Check if URI is valid and not a blob URL that might fail
+  const isValidUri = uri && uri.trim() !== '' && !uri.startsWith('blob:http://localhost:8081/');
+  
+  // Use fallback if image error occurred or URI is invalid
+  const shouldUseFallback = imageError || !isValidUri;
+
+  const handleImageError = () => {
+    console.log('SafeImage: Image failed to load, using fallback:', uri);
+    setImageError(true);
+    setUseFallback(true);
+  };
 
   if (!isValidUri && placeholder) {
     // Show custom placeholder if provided
@@ -24,8 +36,11 @@ const SafeImage: React.FC<SafeImageProps> = ({
 
   return (
     <Image
-      source={{ uri: isValidUri ? uri : fallbackUri }}
+      source={{ 
+        uri: shouldUseFallback ? fallbackUri : uri 
+      }}
       style={style}
+      onError={handleImageError}
       {...imageProps}
     />
   );

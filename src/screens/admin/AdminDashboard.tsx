@@ -4,29 +4,30 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    FlatList,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { db } from '../../config/firebase';
 import { Colors, Typography } from '../../constants';
 import { useAuth } from '../../context/AuthContext';
 import {
-  addFoodItem,
-  deleteFoodItem,
-  getFoodItems,
-  getRestaurantInfo,
-  getUsers,
-  updateFoodItem
+    addFoodItem,
+    deleteFoodItem,
+    getFoodItems,
+    getRestaurantInfo,
+    getUsers,
+    updateFoodItem
 } from '../../services/firebaseService';
 import { Order, orderService } from '../../services/orderService';
+import { makeImagePersistent } from '../../utils/imageUtils';
 import { showConfirmDialog } from '../../utils/platform';
 
 interface User {
@@ -112,23 +113,6 @@ export default function AdminDashboard({ navigation }: Props) {
     totalUsers: 0,
     averageOrderValue: 0,
   });
-
-  // Firebase Storage upload function
-  const uploadImageToStorage = async (uri: string, fileName: string): Promise<string> => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const storageRef = ref(storage, `food-images/${fileName}`);
-      
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      return downloadURL;
-    } catch (error) {
-      console.error('Error uploading image to Firebase Storage:', error);
-      throw error;
-    }
-  };
 
   useEffect(() => {
     loadData();
@@ -518,13 +502,26 @@ export default function AdminDashboard({ navigation }: Props) {
       });
 
       if (!result.canceled && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        console.log('Image URI picked:', imageUri);
+        let imageUri = result.assets[0].uri;
+        console.log('Original Image URI picked:', imageUri);
         
         // Validate URI format
         if (!imageUri || imageUri.trim() === '') {
           Alert.alert('Error', 'Invalid image URI');
           return;
+        }
+
+        // Convert blob URL to base64 for better persistence
+        if (imageUri.startsWith('blob:')) {
+          try {
+            console.log('Converting blob URL to persistent format...');
+            imageUri = await makeImagePersistent(imageUri);
+            console.log('Converted to persistent format:', imageUri.substring(0, 50) + '...');
+          } catch (error) {
+            console.error('Failed to convert blob URL:', error);
+            Alert.alert('Error', 'Failed to process image. Please try a different image.');
+            return;
+          }
         }
 
         setEditingFood(prev => prev ? { ...prev, image: imageUri } : {

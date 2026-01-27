@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import FoodCard from "../../components/food/FoodCard";
 import { Colors, Typography } from "../../constants";
 import { useAuth } from "../../context/AuthContext";
@@ -40,7 +41,7 @@ interface Props {
   navigation: HomeScreenNavigationProp;
 }
 
-export default function HomeScreen({ navigation }: Props) {
+function HomeScreenComponent({ navigation }: Props) {
   const { user } = useAuth();
   const { addItem } = useCart();
   const [foodItems, setFoodItems] = useState<any[]>([]);
@@ -156,6 +157,15 @@ export default function HomeScreen({ navigation }: Props) {
       customIngredients: item.ingredients,
       totalPrice: item.price,
     });
+
+    // Show toast notification
+    Toast.show({
+      type: 'success',
+      text1: 'Added to Cart! 🛒',
+      text2: `${item.name} has been added to your cart`,
+      position: 'top',
+      visibilityTime: 2000,
+    });
   };
 
   const renderFoodItem = ({ item }: { item: any }) => (
@@ -194,24 +204,6 @@ export default function HomeScreen({ navigation }: Props) {
     >
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
 
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.greeting}>Good to see you!</Text>
-            <Text style={styles.title}>
-              {user?.name ? `Welcome, ${user.name}` : "Restaurant Menu"}
-            </Text>
-          </View>
-          {user?.email === "admin@foodie.com" && (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate("AdminDashboard")}
-            >
-              <Ionicons name="settings" size={24} color={Colors.surface} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
 
       <View style={styles.container}>
         {/* Header Section */}
@@ -346,7 +338,7 @@ const styles = StyleSheet.create({
   categoriesContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     paddingVertical: 5,
-    minHeight: 40, // minimum height
+    minHeight: 60, // minimum height
     maxHeight: 60, // maximum height
     borderBottomWidth: 1,
     marginBottom: 20,
@@ -454,3 +446,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default HomeScreenComponent;
