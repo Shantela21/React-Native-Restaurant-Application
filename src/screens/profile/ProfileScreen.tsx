@@ -1,19 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import CardDetailsInput from '../../components/inputs/CardDetailsInput';
 import { useAuth } from '../../context/AuthContext';
-import { showAlert, showConfirmDialog } from '../../utils/platform';
-import { Ionicons } from '@expo/vector-icons';
+import { showConfirmDialog } from '../../utils/platform';
 
 type AuthStackParamList = {
   Login: undefined;
@@ -91,21 +91,6 @@ export default function ProfileScreen({ navigation }: Props) {
       setLoading(false);
     }
   };
-
-  const handleLogout = async () => {
-    try {
-      const shouldLogout = await showConfirmDialog('Are you sure you want to logout?');
-      
-      if (shouldLogout) {
-        await logout();
-        console.log('Logout successful');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      showAlert('Error', 'Failed to logout. Please try again.');
-    }
-  };
-
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -117,6 +102,18 @@ export default function ProfileScreen({ navigation }: Props) {
       </View>
     );
   }
+
+  const handleLogout = async () => {
+    const confirmed = await showConfirmDialog('Are you sure you want to logout?');
+    if (confirmed) {
+      try {
+        await logout();
+        navigation.navigate('Login');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to logout');
+      }
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>

@@ -2,21 +2,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { usePaystack } from "react-native-paystack-webview";
 import CardDetailsInput from "../../components/inputs/CardDetailsInput";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { orderService } from "../../services/orderService";
 
-type PaymentMethod = 'existing_card' | 'new_card' | 'cash_on_delivery';
+type PaymentMethod = 'existing_card' | 'new_card' | 'cash_on_delivery' | 'paystack';
 
 interface SavedCard {
   id: string;
@@ -46,9 +47,10 @@ interface Props {
 export default function CheckoutScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { items, clearCart, getTotalPrice, getTotalItems } = useCart();
+  const { popup } = usePaystack();
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('cash_on_delivery');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('paystack');
   const [selectedCard, setSelectedCard] = useState<any>(
     user?.cardDetails || null
   );
@@ -99,6 +101,110 @@ export default function CheckoutScreen({ navigation }: Props) {
         }
       ]
     );
+  };
+
+  // Paystack Payment Integration
+  const processPaystackPayment = async () => {
+    if (!user) {
+      Alert.alert("Error", "Please login to place an order");
+      return;
+    }
+
+    if (items.length === 0) {
+      Alert.alert("Error", "Your cart is empty");
+      return;
+    }
+
+    try {
+      // Paystack for South Africa uses Rands directly (no conversion needed)
+      const amount = getTotalPrice() + 9.99; // Include delivery fee
+
+      await popup.checkout({
+        email: user.email || "customer@example.com",
+        amount: Math.round(amount * 100), // Paystack expects amount in kobo/cents
+        onSuccess: async (res) => {
+          console.log("Payment successful:", res);
+          
+          try {
+            // Create order in Firestore after successful payment
+            const orderData = {
+              userId: user.uid,
+              items,
+              totalAmount: getTotalPrice(),
+              deliveryAddress,
+              paymentMethod: 'card' as const,
+              status: "pending" as const,
+            };
+
+            const orderResult = await orderService.placeOrder(orderData);
+            
+            if (orderResult.success) {
+              Alert.alert(
+                "Payment Successful", 
+                `Your order #${orderResult.order?.id?.slice(-8) || 'Unknown'} has been placed successfully!`,
+                [
+                  {
+                    text: "View Orders",
+                    onPress: () => {
+                      clearCart();
+                      navigation.navigate("Main");
+                    }
+                  },
+                  {
+                    text: "Continue Shopping",
+                    onPress: () => {
+                      clearCart();
+                      navigation.navigate("Main");
+                    },
+                    style: "cancel"
+                  }
+                ]
+              );
+            } else {
+              Alert.alert(
+                "Payment Successful", 
+                "Payment was successful but there was an issue creating your order. Please contact support.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      clearCart();
+                      navigation.navigate("Main");
+                    }
+                  }
+                ]
+              );
+            }
+          } catch (orderError: any) {
+            console.error("Error creating order:", orderError);
+            Alert.alert(
+              "Payment Successful", 
+              "Payment was successful but there was an issue creating your order. Please contact support.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    clearCart();
+                    navigation.navigate("Main");
+                  }
+                }
+              ]
+            );
+          }
+        },
+        onCancel: () => {
+          console.log("User cancelled payment");
+          Alert.alert("Payment Cancelled", "You cancelled the payment process.");
+        },
+        onError: (error) => {
+          console.error("Payment error:", error);
+          Alert.alert("Payment Error", "An error occurred during payment. Please try again.");
+        },
+      });
+    } catch (error: any) {
+      console.error("Payment initialization error:", error);
+      Alert.alert("Error", "Failed to initialize payment. Please try again.");
+    }
   };
 
   // Payment Gateway Integration
@@ -224,6 +330,8 @@ export default function CheckoutScreen({ navigation }: Props) {
     const totalAmount = getTotalPrice() + 9.99;
     const paymentMethodText = selectedPaymentMethod === 'cash_on_delivery' 
       ? 'Cash on Delivery' 
+      : selectedPaymentMethod === 'paystack'
+      ? 'Paystack (Credit/Debit Card)'
       : selectedPaymentMethod === 'existing_card'
       ? `Card ending in ${selectedCard?.last4}`
       : 'New Card';
@@ -260,6 +368,12 @@ export default function CheckoutScreen({ navigation }: Props) {
   };
 
   const processOrderPayment = async () => {
+    // Process payment based on selected method
+    if (selectedPaymentMethod === 'paystack') {
+      await processPaystackPayment();
+      return;
+    }
+
     // Process payment if card payment is selected
     if (selectedPaymentMethod !== 'cash_on_delivery') {
       let paymentDetails;
@@ -383,6 +497,35 @@ export default function CheckoutScreen({ navigation }: Props) {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Payment Method</Text>
       
+      {/* Paystack Option */}
+      <TouchableOpacity
+        style={[
+          styles.paymentOption,
+          selectedPaymentMethod === 'paystack' && styles.selectedPaymentOption
+        ]}
+        onPress={() => setSelectedPaymentMethod('paystack')}
+      >
+        <View style={styles.paymentOptionLeft}>
+          <Ionicons 
+            name="card-outline" 
+            size={24} 
+            color={selectedPaymentMethod === 'paystack' ? '#007AFF' : '#666'} 
+          />
+          <View style={styles.paymentOptionText}>
+            <Text style={styles.paymentOptionTitle}>Paystack</Text>
+            <Text style={styles.paymentOptionSubtitle}>Secure payment via Paystack</Text>
+          </View>
+        </View>
+        <View style={[
+          styles.radioButton,
+          selectedPaymentMethod === 'paystack' && styles.radioButtonSelected
+        ]}>
+          {selectedPaymentMethod === 'paystack' && (
+            <View style={styles.radioButtonInner} />
+          )}
+        </View>
+      </TouchableOpacity>
+
       {/* Cash on Delivery Option */}
       <TouchableOpacity
         style={[
@@ -613,12 +756,14 @@ export default function CheckoutScreen({ navigation }: Props) {
           <>
             <ActivityIndicator color="#fff" size="small" />
             <Text style={styles.loadingText}>
-              {selectedPaymentMethod !== 'cash_on_delivery' ? 'Processing Payment...' : 'Placing Order...'}
+              {selectedPaymentMethod === 'paystack' ? 'Initializing Paystack...' :
+               selectedPaymentMethod !== 'cash_on_delivery' ? 'Processing Payment...' : 'Placing Order...'}
             </Text>
           </>
         ) : (
           <Text style={styles.placeOrderButtonText}>
-            {selectedPaymentMethod === 'cash_on_delivery' ? 'Place Order' : 'Pay & Place Order'}
+            {selectedPaymentMethod === 'paystack' ? 'Pay with Paystack' :
+             selectedPaymentMethod === 'cash_on_delivery' ? 'Place Order' : 'Pay & Place Order'}
           </Text>
         )}
       </TouchableOpacity>

@@ -7,12 +7,15 @@ import { Colors } from './src/constants';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import { PaystackProvider } from "react-native-paystack-webview";
 
+const paystackPublicKey = "pk_test_745afea5d10e39659b36a024d451e440b55396c0";
 export default function App() {
   return (
     <NavigationContainer>
-      <AuthProvider>
-        <CartProvider>
+      <PaystackProvider publicKey={paystackPublicKey}>
+        <AuthProvider>
+          <CartProvider>
           <View style={styles.container}>
             <AppNavigator />
             <StatusBar style="light" backgroundColor={Colors.primary} />
@@ -20,6 +23,7 @@ export default function App() {
           </View>
         </CartProvider>
       </AuthProvider>
+      </PaystackProvider>
     </NavigationContainer>
   );
 }
