@@ -16,11 +16,17 @@ interface Props {
 }
 
 export default function LandingScreen({ navigation }: Props) {
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <ImageBackground 
-      source={require('../../assets/images/background (2).png')} 
-      style={styles.backgroundImage}
+      source={!imageError ? require('../../assets/images/background (2).png') : null}
+      style={[styles.backgroundImage, imageError && styles.fallbackBackground]}
       resizeMode="cover"
+      onError={() => {
+        console.log('Background image failed to load');
+        setImageError(true);
+      }}
     >
       <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
       
@@ -78,8 +84,8 @@ export default function LandingScreen({ navigation }: Props) {
               style={styles.primaryButton}
               onPress={() => navigation.navigate('Auth', { screen: 'Login' })}
             >
-              <Ionicons name="log-in" size={20} color={Colors.surface} />
-              <Text style={styles.primaryButtonText}>Reserve a Table</Text>
+              <Ionicons name="cart" size={20} color={Colors.surface} />
+              <Text style={styles.primaryButtonText}>Place an Order</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -116,6 +122,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: "100%",
+  },
+  fallbackBackground: {
+    backgroundColor: Colors.primary,
   },
   container: {
     flexGrow: 1,

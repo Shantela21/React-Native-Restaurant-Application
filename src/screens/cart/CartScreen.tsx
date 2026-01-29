@@ -1,6 +1,7 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import {
+    ActivityIndicator,
     Alert,
     FlatList,
     StyleSheet,
@@ -33,6 +34,7 @@ export default function CartScreen({ navigation }: Props) {
     clearCart,
     getTotalPrice,
     getTotalItems,
+    isLoading,
   } = useCart();
 
   const handleCheckout = () => {
@@ -104,7 +106,12 @@ export default function CartScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {items.length > 0 ? (
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Loading your cart...</Text>
+        </View>
+      ) : items.length > 0 ? (
         <FlatList
           data={items}
           renderItem={renderCartItem}
@@ -241,5 +248,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
