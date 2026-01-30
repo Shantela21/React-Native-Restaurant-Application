@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { auth } from '../config/firebase';
 
 export interface CartItem {
   id: string;
@@ -75,36 +76,71 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Load cart from AsyncStorage on mount
+  // Get user-specific storage key
+  const getUserCartKey = (userId: string) => `@foodie_cart_${userId}`;
+
+  // Load cart from AsyncStorage when user changes or on mount
   useEffect(() => {
-    loadCart();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log('Auth state changed:', user?.uid || 'No user');
+      if (user) {
+        setCurrentUserId(user.uid);
+        loadCart(user.uid);
+      } else {
+        setCurrentUserId(null);
+        // Clear cart when user logs out
+        setItems([]);
+        setIsLoading(false);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
-  // Save cart to AsyncStorage whenever items change
+  // Save cart to AsyncStorage whenever items change (only if user is logged in)
   useEffect(() => {
-    if (!isLoading) {
-      saveCart();
+    if (!isLoading && currentUserId) {
+      saveCart(currentUserId);
     }
-  }, [items, isLoading]);
+  }, [items, isLoading, currentUserId]);
 
-  const loadCart = async () => {
+  // Clean up blob URLs when loading cart
+  const cleanCartItems = (items: CartItem[]): CartItem[] => {
+    return items.map(item => ({
+      ...item,
+      // Remove blob URLs as they're invalid after app refresh
+      image: item.image && item.image.startsWith('blob:') ? '' : item.image || ''
+    }));
+  };
+
+  const loadCart = async (userId: string) => {
     try {
-      const savedCart = await AsyncStorage.getItem(CART_STORAGE_KEY);
+      const userCartKey = getUserCartKey(userId);
+      const savedCart = await AsyncStorage.getItem(userCartKey);
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart);
-        setItems(parsedCart);
+        const cleanedCart = cleanCartItems(parsedCart);
+        setItems(cleanedCart);
+        console.log(`Loaded ${cleanedCart.length} items for user ${userId}`);
+      } else {
+        setItems([]);
+        console.log(`No saved cart found for user ${userId}`);
       }
     } catch (error) {
       console.error('Error loading cart:', error);
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveCart = async () => {
+  const saveCart = async (userId: string) => {
     try {
-      await AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      const userCartKey = getUserCartKey(userId);
+      await AsyncStorage.setItem(userCartKey, JSON.stringify(items));
+      console.log(`Saved ${items.length} items for user ${userId}`);
     } catch (error) {
       console.error('Error saving cart:', error);
     }
@@ -115,13 +151,33 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const existingItem = prevItems.find(item => item.id === newItem.id);
       
       if (existingItem) {
-        return prevItems.map(item =>
-          item.id === newItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+        return prevItems.map(item => {
+          if (item.id === newItem.id) {
+            const newQuantity = item.quantity + 1;
+            // Recalculate total price for existing item
+            const basePrice = item.price;
+            const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+            const selectedSidesTotal = item.selectedSides?.reduce((sum, side) => sum + side.price, 0) || 0;
+            const selectedDrinksTotal = item.selectedDrinks?.reduce((sum, drink) => sum + drink.price, 0) || 0;
+            const selectedExtrasTotal = item.selectedExtras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+            
+            const itemTotalPrice = (basePrice + extrasTotal + selectedSidesTotal + selectedDrinksTotal + selectedExtrasTotal) * newQuantity;
+            
+            return { ...item, quantity: newQuantity, totalPrice: itemTotalPrice };
+          }
+          return item;
+        });
       } else {
-        return [...prevItems, { ...newItem, quantity: 1 }];
+        // Calculate total price for new item
+        const basePrice = newItem.price;
+        const extrasTotal = newItem.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+        const selectedSidesTotal = newItem.selectedSides?.reduce((sum, side) => sum + side.price, 0) || 0;
+        const selectedDrinksTotal = newItem.selectedDrinks?.reduce((sum, drink) => sum + drink.price, 0) || 0;
+        const selectedExtrasTotal = newItem.selectedExtras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+        
+        const itemTotalPrice = basePrice + extrasTotal + selectedSidesTotal + selectedDrinksTotal + selectedExtrasTotal;
+        
+        return [...prevItems, { ...newItem, quantity: 1, totalPrice: itemTotalPrice }];
       }
     });
   };
@@ -131,13 +187,33 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const existingItem = prevItems.find(item => item.id === newItem.id);
       
       if (existingItem) {
-        return prevItems.map(item =>
-          item.id === newItem.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+        return prevItems.map(item => {
+          if (item.id === newItem.id) {
+            const newQuantity = item.quantity + quantity;
+            // Recalculate total price for existing item
+            const basePrice = item.price;
+            const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+            const selectedSidesTotal = item.selectedSides?.reduce((sum, side) => sum + side.price, 0) || 0;
+            const selectedDrinksTotal = item.selectedDrinks?.reduce((sum, drink) => sum + drink.price, 0) || 0;
+            const selectedExtrasTotal = item.selectedExtras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+            
+            const itemTotalPrice = (basePrice + extrasTotal + selectedSidesTotal + selectedDrinksTotal + selectedExtrasTotal) * newQuantity;
+            
+            return { ...item, quantity: newQuantity, totalPrice: itemTotalPrice };
+          }
+          return item;
+        });
       } else {
-        return [...prevItems, { ...newItem, quantity }];
+        // Calculate total price for new item
+        const basePrice = newItem.price;
+        const extrasTotal = newItem.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+        const selectedSidesTotal = newItem.selectedSides?.reduce((sum, side) => sum + side.price, 0) || 0;
+        const selectedDrinksTotal = newItem.selectedDrinks?.reduce((sum, drink) => sum + drink.price, 0) || 0;
+        const selectedExtrasTotal = newItem.selectedExtras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+        
+        const itemTotalPrice = (basePrice + extrasTotal + selectedSidesTotal + selectedDrinksTotal + selectedExtrasTotal) * quantity;
+        
+        return [...prevItems, { ...newItem, quantity, totalPrice: itemTotalPrice }];
       }
     });
   };
@@ -153,18 +229,41 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
 
     setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
+      prevItems.map(item => {
+        if (item.id === id) {
+          // Recalculate the total price based on the new quantity
+          const basePrice = item.price;
+          const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+          const selectedSidesTotal = item.selectedSides?.reduce((sum, side) => sum + side.price, 0) || 0;
+          const selectedDrinksTotal = item.selectedDrinks?.reduce((sum, drink) => sum + drink.price, 0) || 0;
+          const selectedExtrasTotal = item.selectedExtras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+          
+          const itemTotalPrice = (basePrice + extrasTotal + selectedSidesTotal + selectedDrinksTotal + selectedExtrasTotal) * quantity;
+          
+          return { ...item, quantity, totalPrice: itemTotalPrice };
+        }
+        return item;
+      })
     );
   };
 
   const clearCart = () => {
+    console.log('=== CLEAR CART FUNCTION CALLED ===');
+    console.log('Current items before clear:', items.length);
     setItems([]);
-    // Also clear from AsyncStorage immediately
-    AsyncStorage.removeItem(CART_STORAGE_KEY).catch(error => {
-      console.error('Error clearing cart from storage:', error);
-    });
+    console.log('Items set to empty array');
+    
+    // Clear from AsyncStorage for current user
+    if (currentUserId) {
+      const userCartKey = getUserCartKey(currentUserId);
+      AsyncStorage.removeItem(userCartKey)
+        .then(() => {
+          console.log(`AsyncStorage cart cleared for user ${currentUserId}`);
+        })
+        .catch(error => {
+          console.error('Error clearing cart from storage:', error);
+        });
+    }
   };
 
   const getTotalPrice = () => {

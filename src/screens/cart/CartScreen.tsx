@@ -88,6 +88,8 @@ export default function CartScreen({ navigation }: Props) {
         <TouchableOpacity
           style={styles.clearButton}
           onPress={() => {
+            console.log('Clear button pressed!');
+            console.log('Current cart items:', items.length);
             Alert.alert(
               'Clear Cart',
               'Are you sure you want to clear your entire cart?',
@@ -96,7 +98,11 @@ export default function CartScreen({ navigation }: Props) {
                 {
                   text: 'Clear',
                   style: 'destructive',
-                  onPress: clearCart,
+                  onPress: () => {
+                    console.log('User confirmed clear cart');
+                    clearCart();
+                    console.log('Clear cart function called');
+                  },
                 },
               ]
             );
@@ -173,6 +179,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   clearButtonText: {
     color: '#fff',

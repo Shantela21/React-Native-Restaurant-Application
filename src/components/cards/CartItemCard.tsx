@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { CartItem } from '../../context/CartContext';
 
@@ -31,6 +31,17 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
   onRemove,
   onEdit,
 }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const getImageSource = () => {
+    // Check if image URL is a blob URL (which might be invalid)
+    if (item.image && item.image.trim() !== '' && !item.image.startsWith('blob:')) {
+      return { uri: item.image };
+    }
+    // Use fallback placeholder for blob URLs or empty images
+    return null;
+  };
+
   const renderSelectedOptions = () => {
     const options = [];
     
@@ -64,12 +75,12 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
   return (
     <View style={styles.container}>
       <Image 
-        source={{ 
-          uri: item.image && item.image.trim() !== '' 
-            ? item.image 
-            : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjRmNGY0Ii8+PHRleHQgeD0iMzAiIHk9IjMyIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vPC90ZXh0Pjwvc3ZnPg=='
-        }} 
-        style={styles.itemImage} 
+        source={getImageSource() || { uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjRmNGY0Ii8+PHRleHQgeD0iMzAiIHk9IjMyIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vPC90ZXh0Pjwvc3ZnPg==' }}
+        style={styles.itemImage}
+        onError={() => {
+          console.log('Cart item image failed to load:', item.image);
+          setImageError(true);
+        }}
       />
       
       <View style={styles.itemContent}>
