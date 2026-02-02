@@ -1,3 +1,4 @@
+import { CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import {
@@ -74,7 +75,16 @@ export default function CartScreen({ navigation }: Props) {
       <Text style={styles.emptySubtitle}>Add some delicious items to get started!</Text>
       <TouchableOpacity
         style={styles.browseButton}
-        onPress={() => navigation.navigate('Main')}
+        onPress={() => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [
+                { name: 'Main' }
+              ],
+            })
+          );
+        }}
       >
         <Text style={styles.browseButtonText}>Browse Menu</Text>
       </TouchableOpacity>

@@ -32,12 +32,50 @@ export const blobUrlToBase64 = async (blobUrl: string): Promise<string> => {
 };
 
 /**
+ * Convert a local file URI to base64 string
+ * @param fileUri The local file URI to convert
+ * @returns Promise<string> Base64 string
+ */
+export const fileUriToBase64 = async (fileUri: string): Promise<string> => {
+  try {
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix if needed
+        const base64 = result.includes('base64,') 
+          ? result.split('base64,')[1] 
+          : result;
+        resolve(`data:image/jpeg;base64,${base64}`);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error converting file URI to base64:', error);
+    throw error;
+  }
+};
+
+/**
  * Check if a URL is a blob URL
  * @param url The URL to check
  * @returns boolean True if it's a blob URL
  */
 export const isBlobUrl = (url: string): boolean => {
   return url.startsWith('blob:');
+};
+
+/**
+ * Check if a URL is a local file URI
+ * @param url The URL to check
+ * @returns boolean True if it's a local file URI
+ */
+export const isFileUri = (url: string): boolean => {
+  return url.startsWith('file://');
 };
 
 /**
@@ -48,18 +86,29 @@ export const isBlobUrl = (url: string): boolean => {
 export const makeImagePersistent = async (uri: string): Promise<string> => {
   if (!uri) return '';
   
-  // If it's not a blob URL, return as is
-  if (!isBlobUrl(uri)) {
-    return uri;
+  // If it's a blob URL, convert to base64
+  if (isBlobUrl(uri)) {
+    try {
+      return await blobUrlToBase64(uri);
+    } catch (error) {
+      console.error('Failed to convert blob URL:', error);
+      return '';
+    }
   }
   
-  // Convert blob URL to base64
-  try {
-    return await blobUrlToBase64(uri);
-  } catch (error) {
-    console.error('Failed to make image persistent:', error);
-    return '';
+  // If it's a local file URI, convert to base64
+  if (isFileUri(uri)) {
+    try {
+      console.log('Converting local file URI to base64...');
+      return await fileUriToBase64(uri);
+    } catch (error) {
+      console.error('Failed to convert file URI:', error);
+      return '';
+    }
   }
+  
+  // If it's already a remote URL or base64, return as is
+  return uri;
 };
 
 /**

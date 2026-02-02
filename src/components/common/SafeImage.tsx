@@ -17,8 +17,11 @@ const SafeImage: React.FC<SafeImageProps> = ({
   const [imageError, setImageError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
 
-  // Check if URI is valid and not a blob URL that might fail
-  const isValidUri = uri && uri.trim() !== '' && !uri.startsWith('blob:http://localhost:8081/');
+  // Check if URI is valid and not a problematic URL
+  const isValidUri = uri && 
+    uri.trim() !== '' && 
+    !uri.startsWith('blob:http://localhost:8081/') &&
+    !uri.startsWith('file://'); // Filter out local file URIs
   
   // Use fallback if image error occurred or URI is invalid
   const shouldUseFallback = imageError || !isValidUri;

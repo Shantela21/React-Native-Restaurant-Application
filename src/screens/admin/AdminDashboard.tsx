@@ -7,6 +7,7 @@ import {
     Alert,
     FlatList,
     Image,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -129,6 +130,7 @@ export default function AdminDashboard({ navigation }: Props) {
     const unsubscribeOrders = onSnapshot(ordersQuery, (querySnapshot) => {
       const ordersData = querySnapshot.docs.map(doc => {
         const data = doc.data();
+        console.log('Raw order data from admin dashboard:', data);
         return {
           id: doc.id,
           ...data,
@@ -152,7 +154,23 @@ export default function AdminDashboard({ navigation }: Props) {
       }));
       
       console.log('Real-time orders update:', ordersData.length);
+    }, (error) => {
+      console.error('Error in orders listener:', error);
+      // Fallback to manual fetch
+      loadOrdersManually();
     });
+
+    // Fallback function to load orders manually
+    const loadOrdersManually = async () => {
+      try {
+        console.log('Loading orders manually as fallback...');
+        const ordersData = await orderService.getAllOrders();
+        setOrders(ordersData);
+        console.log('Manual orders load completed:', ordersData.length);
+      } catch (error) {
+        console.error('Error loading orders manually:', error);
+      }
+    };
 
     // Real-time listener for users
     const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
@@ -511,14 +529,14 @@ export default function AdminDashboard({ navigation }: Props) {
           return;
         }
 
-        // Convert blob URL to base64 for better persistence
-        if (imageUri.startsWith('blob:')) {
+        // Convert local file URI or blob URL to base64 for better persistence
+        if (imageUri.startsWith('blob:') || imageUri.startsWith('file://')) {
           try {
-            console.log('Converting blob URL to persistent format...');
+            console.log('Converting image URI to persistent format...');
             imageUri = await makeImagePersistent(imageUri);
             console.log('Converted to persistent format:', imageUri.substring(0, 50) + '...');
           } catch (error) {
-            console.error('Failed to convert blob URL:', error);
+            console.error('Failed to convert image URI:', error);
             Alert.alert('Error', 'Failed to process image. Please try a different image.');
             return;
           }
@@ -755,7 +773,12 @@ export default function AdminDashboard({ navigation }: Props) {
             <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
               {editingFood?.image && editingFood.image.trim() !== '' ? (
                 <Image 
-                  source={{ uri: editingFood.image }} 
+                  source={
+                    // Filter out local file URIs and blob URLs that might fail
+                    editingFood.image.startsWith('file://') || editingFood.image.startsWith('blob:')
+                      ? { uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9Ijc1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=' }
+                      : { uri: editingFood.image }
+                  } 
                   style={styles.previewImage}
                   onError={() => console.log('Image failed to load:', editingFood.image)}
                   onLoad={() => console.log('Image loaded successfully:', editingFood.image)}
@@ -1107,9 +1130,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: Colors.surface,
     marginBottom: 8,
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    // Web-compatible text shadow for React Native Web
+    ...(Platform.OS === 'web' && {
+      textShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+    }),
     letterSpacing: 0.5,
   },
   headerSubtitle: {

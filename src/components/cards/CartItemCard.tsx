@@ -34,11 +34,14 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const getImageSource = () => {
-    // Check if image URL is a blob URL (which might be invalid)
-    if (item.image && item.image.trim() !== '' && !item.image.startsWith('blob:')) {
+    // Check if image URL is a blob URL or local file URI (which might be invalid)
+    if (item.image && 
+        item.image.trim() !== '' && 
+        !item.image.startsWith('blob:') && 
+        !item.image.startsWith('file://')) {
       return { uri: item.image };
     }
-    // Use fallback placeholder for blob URLs or empty images
+    // Use fallback placeholder for blob URLs, local file URIs, or empty images
     return null;
   };
 
@@ -74,7 +77,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <Image 
+      {/* <Image 
         source={getImageSource() || { uri: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjRmNGY0Ii8+PHRleHQgeD0iMzAiIHk9IjMyIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vPC90ZXh0Pjwvc3ZnPg==' }}
         style={styles.itemImage}
         onError={() => {
@@ -82,7 +85,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
           setImageError(true);
         }}
       />
-      
+       */}
       <View style={styles.itemContent}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemName} numberOfLines={2}>

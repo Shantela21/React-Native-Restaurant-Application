@@ -47,8 +47,15 @@ class OrderService {
         updatedAt: new Date(),
       };
 
+      console.log('=== PLACING ORDER ===');
+      console.log('Order data:', newOrder);
+      console.log('User ID:', currentUser.uid);
+
       // Save to Firestore
       await setDoc(doc(db, "orders", newOrder.id), newOrder);
+      
+      console.log('Order saved to Firestore successfully');
+      console.log('Order ID:', newOrder.id);
 
       return {
         success: true,
@@ -56,6 +63,10 @@ class OrderService {
         message: 'Order placed successfully'
       };
     } catch (error: any) {
+      console.error('=== ORDER PLACEMENT ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      
       return {
         success: false,
         message: error.message || 'Failed to place order'

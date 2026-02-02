@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User } from 'firebase/auth';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 
 export interface CartItem {
   id: string;
@@ -77,17 +79,22 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [unsubscribeCart, setUnsubscribeCart] = useState<(() => void) | null>(null);
 
-  // Get user-specific storage key
-  const getUserCartKey = (userId: string) => `@foodie_cart_${userId}`;
-
-  // Load cart from AsyncStorage when user changes or on mount
+  // Load cart from Firestore when user changes or on mount
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
       console.log('Auth state changed:', user?.uid || 'No user');
+      
+      // Unsubscribe from previous cart listener
+      if (unsubscribeCart) {
+        unsubscribeCart();
+        setUnsubscribeCart(null);
+      }
+      
       if (user) {
         setCurrentUserId(user.uid);
-        loadCart(user.uid);
+        loadCartFromFirestore(user.uid);
       } else {
         setCurrentUserId(null);
         // Clear cart when user logs out
@@ -99,50 +106,105 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  // Save cart to AsyncStorage whenever items change (only if user is logged in)
+  // Save cart to AsyncStorage whenever items change (FIRESTORE DISABLED DUE TO QUOTA)
   useEffect(() => {
+    // TEMPORARY FALLBACK TO ASYNCSTORAGE - Firebase quota exceeded
     if (!isLoading && currentUserId) {
-      saveCart(currentUserId);
+      const timeoutId = setTimeout(() => {
+        saveCartToAsyncStorage(currentUserId);
+      }, 500); // Quick save to AsyncStorage
+
+      return () => clearTimeout(timeoutId);
     }
   }, [items, isLoading, currentUserId]);
 
-  // Clean up blob URLs when loading cart
+  // Clean up blob URLs and local file URIs when loading cart
   const cleanCartItems = (items: CartItem[]): CartItem[] => {
     return items.map(item => ({
       ...item,
-      // Remove blob URLs as they're invalid after app refresh
-      image: item.image && item.image.startsWith('blob:') ? '' : item.image || ''
+      // Remove blob URLs and local file URIs as they're invalid after app refresh
+      image: item.image && (item.image.startsWith('blob:') || item.image.startsWith('file://')) ? '' : item.image || ''
     }));
   };
 
-  const loadCart = async (userId: string) => {
+  const loadCartFromFirestore = async (userId: string) => {
     try {
-      const userCartKey = getUserCartKey(userId);
+      const cartRef = doc(db, 'carts', userId);
+      
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(cartRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const cartData = docSnapshot.data();
+          const cartItems = cartData.items || [];
+          const cleanedCart = cleanCartItems(cartItems);
+          setItems(cleanedCart);
+          console.log(`Loaded ${cleanedCart.length} items for user ${userId} from Firestore`);
+        } else {
+          // No cart in Firestore, try AsyncStorage fallback
+          loadCartFromAsyncStorage(userId);
+        }
+        setIsLoading(false);
+      }, (error) => {
+        console.error('Error loading cart from Firestore:', error);
+        // Fallback to AsyncStorage on Firestore error
+        loadCartFromAsyncStorage(userId);
+      });
+
+      setUnsubscribeCart(() => unsubscribe);
+    } catch (error) {
+      console.error('Error setting up cart listener:', error);
+      // Fallback to AsyncStorage on setup error
+      loadCartFromAsyncStorage(userId);
+    }
+  };
+
+  // Fallback: Load cart from AsyncStorage
+  const loadCartFromAsyncStorage = async (userId: string) => {
+    try {
+      const userCartKey = `@foodie_cart_${userId}`;
       const savedCart = await AsyncStorage.getItem(userCartKey);
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart);
         const cleanedCart = cleanCartItems(parsedCart);
         setItems(cleanedCart);
-        console.log(`Loaded ${cleanedCart.length} items for user ${userId}`);
+        console.log(`Loaded ${cleanedCart.length} items for user ${userId} from AsyncStorage (fallback)`);
       } else {
         setItems([]);
-        console.log(`No saved cart found for user ${userId}`);
+        console.log(`No cart found for user ${userId} in AsyncStorage`);
       }
     } catch (error) {
-      console.error('Error loading cart:', error);
+      console.error('Error loading cart from AsyncStorage:', error);
       setItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveCart = async (userId: string) => {
+  const saveCartToFirestore = async (userId: string) => {
     try {
-      const userCartKey = getUserCartKey(userId);
-      await AsyncStorage.setItem(userCartKey, JSON.stringify(items));
-      console.log(`Saved ${items.length} items for user ${userId}`);
+      const cartRef = doc(db, 'carts', userId);
+      const cartData = {
+        userId: userId,
+        items: items,
+        updatedAt: new Date(),
+        isActive: true
+      };
+      
+      await setDoc(cartRef, cartData);
+      console.log(`Saved ${items.length} items for user ${userId} to Firestore`);
     } catch (error) {
-      console.error('Error saving cart:', error);
+      console.error('Error saving cart to Firestore:', error);
+    }
+  };
+
+  // TEMPORARY FALLBACK: Save to AsyncStorage when Firestore quota is exceeded
+  const saveCartToAsyncStorage = async (userId: string) => {
+    try {
+      const userCartKey = `@foodie_cart_${userId}`;
+      await AsyncStorage.setItem(userCartKey, JSON.stringify(items));
+      console.log(`Saved ${items.length} items for user ${userId} to AsyncStorage (fallback)`);
+    } catch (error) {
+      console.error('Error saving cart to AsyncStorage:', error);
     }
   };
 
@@ -253,16 +315,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setItems([]);
     console.log('Items set to empty array');
     
-    // Clear from AsyncStorage for current user
+    // Clear from Firestore for current user
     if (currentUserId) {
-      const userCartKey = getUserCartKey(currentUserId);
-      AsyncStorage.removeItem(userCartKey)
-        .then(() => {
-          console.log(`AsyncStorage cart cleared for user ${currentUserId}`);
-        })
-        .catch(error => {
-          console.error('Error clearing cart from storage:', error);
-        });
+      saveCartToFirestore(currentUserId); // This will save empty cart to Firestore
+      console.log(`Cart cleared for user ${currentUserId} in Firestore`);
     }
   };
 

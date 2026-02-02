@@ -139,6 +139,10 @@ export default function CheckoutScreen({ navigation }: Props) {
             const orderResult = await orderService.placeOrder(orderData);
             
             if (orderResult.success) {
+              console.log('Paystack order placed successfully, clearing cart...');
+              // Clear cart immediately after successful order placement
+              clearCart();
+              
               Alert.alert(
                 "Payment Successful", 
                 `Your order #${orderResult.order?.id?.slice(-8) || 'Unknown'} has been placed successfully!`,
@@ -146,17 +150,14 @@ export default function CheckoutScreen({ navigation }: Props) {
                   {
                     text: "View Orders",
                     onPress: () => {
-                      clearCart();
                       navigation.navigate("Main");
                     }
                   },
                   {
                     text: "Continue Shopping",
                     onPress: () => {
-                      clearCart();
                       navigation.navigate("Main");
-                    },
-                    style: "cancel"
+                    }
                   }
                 ]
               );
@@ -289,7 +290,6 @@ export default function CheckoutScreen({ navigation }: Props) {
 
   const handlePlaceOrder = async () => {
     console.log('=== PLACE ORDER CLICKED ===');
-    Alert.alert("Debug", "Place Order button was clicked!");
     
     if (!user) {
       Alert.alert("Login Required", "Please login to place an order");
@@ -444,7 +444,10 @@ export default function CheckoutScreen({ navigation }: Props) {
       console.log('Order placement result:', result);
 
       if (result.success) {
-        console.log('Order placed successfully, navigating to main screen...');
+        console.log('Order placed successfully, clearing cart...');
+        // Clear cart immediately after successful order placement
+        clearCart();
+        
         // Show success alert
         Alert.alert(
           "Order Placed Successfully!",
@@ -453,7 +456,6 @@ export default function CheckoutScreen({ navigation }: Props) {
             {
               text: "View Orders",
               onPress: () => {
-                clearCart();
                 // Navigate to main tab, then user can tap on Orders tab
                 navigation.navigate("Main");
               },
@@ -461,7 +463,6 @@ export default function CheckoutScreen({ navigation }: Props) {
             {
               text: "Continue Shopping",
               onPress: () => {
-                clearCart();
                 navigation.navigate("Main");
               },
               style: "cancel"

@@ -85,7 +85,7 @@ export default function LandingScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Auth', { screen: 'Login' })}
             >
               <Ionicons name="cart" size={20} color={Colors.surface} />
-              <Text style={styles.primaryButtonText}>Place an Order</Text>
+              <Text style={styles.primaryButtonText}>Login</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 

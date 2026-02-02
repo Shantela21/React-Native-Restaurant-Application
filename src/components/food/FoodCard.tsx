@@ -61,13 +61,13 @@ const FoodCard: React.FC<FoodCardProps> = ({ item, onPress, onAddToCart }) => {
         activeOpacity={1}
       >
         <View style={styles.imageContainer}>
-          <SafeImage 
+          {/* <SafeImage 
             uri={item.image}
             fallbackUri="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9Ijc1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4="
             style={styles.image}
             onError={(error) => console.log('FoodCard image failed to load:', item.image, error)}
             onLoad={() => console.log('FoodCard image loaded successfully:', item.image)}
-          />
+          /> */}
           <View style={styles.priceBadge}>
             <Text style={styles.priceText}>R{item.price.toFixed(2)}</Text>
           </View>
