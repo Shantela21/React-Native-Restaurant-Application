@@ -1,50 +1,111 @@
-w# Welcome to your Expo app 👋
+<img src="https://socialify.git.ci/Shantela21/React-Native-Restaurant-Application/image?language=1&owner=1&name=1&stargazers=1&theme=Light" alt="React-Native-Restaurant-Application" width="640" height="320" />
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+A fully functional restaurant app built with **React Native** and **Expo**, featuring user authentication, cart management, and multiple payment methods including **Paystack** integration.
 
-1. Install dependencies
+## Table of Contents
 
-   ```bash
-   npm install
-   ```
+- [Features](#features)
+- [Installation](#installation)
+- [Running the App](#running-the-app)
+- [Project Structure](#project-structure)
+- [Dependencies](#dependencies)
+- [Scripts](#scripts)
+- [Contributing](#contributing)
+- [License](#license)
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+- User authentication (login/signup)
+- Browse menu items and view food details
+- Add items to cart and checkout
+- Payment via:
+  - Paystack (credit/debit cards)
+  - Saved cards
+  - Cash on delivery
+- Firebase integration for user and order management
+- Toast notifications for actions and errors
+- Responsive UI with Expo components
+- State management using React Context and Redux Toolkit
 
-In the output, you'll find options to open the app in a
+## Installation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+**1. Clone the repository:**
 
 ```bash
+git clone https://github.com/Shantela21/reactnativerestaurantapp.git
+```
+```
+cd reactnativerestaurantapp
+```
+
+**2. Install dependencies:**|
+
+```bash
+npm install
+```
+
+**3. Run the app:**
+
+```bash
+expo start
+```
+
+## Available options:
+
+* Run on Android: npm run android
+* Run on iOS: npm run ios
+* Run on Web: npm run web
+
+Reset project (clear caches and rebuild):
+```
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Project Structure
+```
+reactnativerestaurantapp/
+├── App.tsx
+├── package.json
+├── scripts/
+│   └── reset-project.js
+├── src/
+│   ├── components/          # Reusable UI components
+│   ├── constants/           # App constants like Colors
+│   ├── context/             # Auth and Cart contexts
+│   ├── navigation/          # Navigation setup (AppNavigator)
+│   ├── screens/             # App screens (Checkout, Cart, FoodDetails, etc.)
+│   └── services/            # API and Firebase services
+└── assets/                  # Images, fonts, and icons
+```
 
-## Learn more
+## Dependencies
+* React Native & Expo: react-native, expo, expo-status-bar, expo-font, expo-image, etc.
+* Navigation: @react-navigation/native, @react-navigation/native-stack, @react-navigation/bottom-tabs
+* State Management: react-redux, @reduxjs/toolkit
+* Firebase: firebase
+* Payment: react-native-paystack-webview
+* UI: react-native-elements, @expo/vector-icons
+* Async Storage: @react-native-async-storage/async-storage
+* Toast Notifications: react-native-toast-message
 
-To learn more about developing your project with Expo, look at the following resources:
+## Scripts
+```
+| Script          | Description                          |
+| --------------- | ------------------------------------ |
+| `start`         | Start Expo development server        |
+| `android`       | Run app on Android device/emulator   |
+| `ios`           | Run app on iOS simulator             |
+| `web`           | Run app on web browser               |
+| `lint`          | Lint project files using Expo config |
+| `reset-project` | Clear cache and reset project setup  |
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Contributing
 
-## Join the community
+Contributions are welcome! Please follow standard GitHub flow:
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Fork the repository
+2. Create a feature branch
+3. Make changes and commit
+4. Submit a pull request

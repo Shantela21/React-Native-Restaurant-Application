@@ -1,15 +1,15 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React from "react";
 import {
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import CartItemCard from '../../components/cards/CartItemCard';
-import { useCart } from '../../context/CartContext';
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import CartItemCard from "../../components/cards/CartItemCard";
+import { useCart } from "../../context/CartContext";
 
 type RootStackParamList = {
   Auth: undefined;
@@ -19,7 +19,10 @@ type RootStackParamList = {
   Checkout: undefined;
 };
 
-type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
+type CartScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Cart"
+>;
 
 interface Props {
   navigation: CartScreenNavigationProp;
@@ -35,12 +38,36 @@ export default function CartScreen({ navigation }: Props) {
     getTotalItems,
   } = useCart();
 
+  // ✅ HANDLE CLEAR CART WITH CONFIRMATION + SUCCESS
+  const handleClearCart = () => {
+    if (items.length === 0) return;
+
+    Alert.alert(
+      "Clear Cart",
+      "Are you sure you want to remove ALL items from your cart?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            clearCart(); // clears everything
+            Alert.alert("Success", "Your cart has been cleared 🧹");
+          },
+        },
+      ],
+    );
+  };
+
   const handleCheckout = () => {
     if (items.length === 0) {
-      Alert.alert('Cart Empty', 'Please add items to your cart before checkout');
+      Alert.alert(
+        "Cart Empty",
+        "Please add items to your cart before checkout",
+      );
       return;
     }
-    navigation.navigate('Checkout');
+    navigation.navigate("Checkout");
   };
 
   const renderCartItem = ({ item }: { item: any }) => (
@@ -49,20 +76,16 @@ export default function CartScreen({ navigation }: Props) {
       onIncrease={() => updateQuantity(item.id, item.quantity + 1)}
       onDecrease={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
       onRemove={() => {
-        Alert.alert(
-          'Remove Item',
-          `Remove ${item.name} from cart?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Remove',
-              style: 'destructive',
-              onPress: () => removeItem(item.id),
-            },
-          ]
-        );
+        Alert.alert("Remove Item", `Remove ${item.name} from cart?`, [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: () => removeItem(item.id),
+          },
+        ]);
       }}
-      onEdit={() => navigation.navigate('FoodDetails', { foodId: item.id })}
+      onEdit={() => navigation.navigate("FoodDetails", { foodId: item.id })}
     />
   );
 
@@ -88,29 +111,23 @@ export default function CartScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.title}>My Cart</Text>
+
         <TouchableOpacity
-          style={styles.clearButton}
-          onPress={() => {
-            Alert.alert(
-              'Clear Cart',
-              'Are you sure you want to clear your entire cart?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Clear',
-                  style: 'destructive',
-                  onPress: clearCart,
-                },
-              ]
-            );
-          }}
+          style={[
+            styles.clearButton,
+            items.length === 0 && styles.clearButtonDisabled,
+          ]}
+          onPress={handleClearCart}
+          disabled={items.length === 0}
         >
           <Text style={styles.clearButtonText}>Clear</Text>
         </TouchableOpacity>
       </View>
 
+      {/* CART LIST */}
       {items.length > 0 ? (
         <FlatList
           data={items}
@@ -123,6 +140,7 @@ export default function CartScreen({ navigation }: Props) {
         renderEmptyCart()
       )}
 
+      {/* FOOTER */}
       <View style={styles.footer}>
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
@@ -131,17 +149,22 @@ export default function CartScreen({ navigation }: Props) {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total:</Text>
-            <Text style={styles.summaryValue}>R{getTotalPrice().toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>
+              R{getTotalPrice().toFixed(2)}
+            </Text>
           </View>
         </View>
-        
+
         <TouchableOpacity
-          style={[styles.checkoutButton, items.length === 0 && styles.checkoutButtonDisabled]}
+          style={[
+            styles.checkoutButton,
+            items.length === 0 && styles.checkoutButtonDisabled,
+          ]}
           onPress={handleCheckout}
           disabled={items.length === 0}
         >
           <Text style={styles.checkoutButtonText}>
-            {items.length === 0 ? 'Add Items First' : 'Proceed to Checkout'}
+            {items.length === 0 ? "Add Items First" : "Proceed to Checkout"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -152,31 +175,34 @@ export default function CartScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   clearButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: "#FF3B30",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
+  clearButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
   clearButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   cartList: {
     padding: 16,
@@ -184,69 +210,68 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#666',
+    fontWeight: "bold",
+    color: "#666",
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
+    color: "#999",
+    textAlign: "center",
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   browseButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: "#eee",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   summaryContainer: {
     marginBottom: 16,
   },
   summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   summaryLabel: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   summaryValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   checkoutButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingVertical: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   checkoutButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   checkoutButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
