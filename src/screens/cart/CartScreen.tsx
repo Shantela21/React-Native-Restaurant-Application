@@ -69,10 +69,17 @@ export default function CartScreen({ navigation }: Props) {
   const renderEmptyCart = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>Your cart is empty</Text>
-      <Text style={styles.emptySubtitle}>Add some delicious items to get started!</Text>
+      <Text style={styles.emptySubtitle}>
+        Add some delicious items to get started!
+      </Text>
       <TouchableOpacity
         style={styles.browseButton}
-        onPress={() => navigation.navigate('Main')}
+        onPress={() =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          })
+        }
       >
         <Text style={styles.browseButtonText}>Browse Menu</Text>
       </TouchableOpacity>

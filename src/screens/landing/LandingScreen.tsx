@@ -79,7 +79,7 @@ export default function LandingScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('Auth', { screen: 'Login' })}
             >
               <Ionicons name="log-in" size={20} color={Colors.surface} />
-              <Text style={styles.primaryButtonText}>Reserve a Table</Text>
+              <Text style={styles.primaryButtonText}>Login</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
