@@ -587,38 +587,65 @@ export default function AdminDashboard({ navigation }: Props) {
       </View>
 
       {/* Quick Actions Section */}
-      <View style={styles.quickActionsSection}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          <TouchableOpacity style={styles.quickActionCard} onPress={() => setShowAddFood(true)}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="add-circle" size={28} color="#6366F1" />
-            </View>
-            <Text style={styles.quickActionTitle}>Add Item</Text>
-            <Text style={styles.quickActionSubtitle}>New menu item</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="bar-chart" size={28} color="#10B981" />
-            </View>
-            <Text style={styles.quickActionTitle}>Analytics</Text>
-            <Text style={styles.quickActionSubtitle}>View reports</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="notifications" size={28} color="#F59E0B" />
-            </View>
-            <Text style={styles.quickActionTitle}>Notifications</Text>
-            <Text style={styles.quickActionSubtitle}>Send alerts</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="settings" size={28} color="#EF4444" />
-            </View>
-            <Text style={styles.quickActionTitle}>Settings</Text>
-            <Text style={styles.quickActionSubtitle}>Configure</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.quickActionsGrid}>
+        {/* ADD ITEM */}
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => {
+            setActiveTab("food");
+            setShowAddFood(true);
+          }}
+        >
+          <View style={styles.quickActionIcon}>
+            <Ionicons name="add-circle" size={28} color="#6366F1" />
+          </View>
+          <Text style={styles.quickActionTitle}>Add Item</Text>
+          <Text style={styles.quickActionSubtitle}>New menu item</Text>
+        </TouchableOpacity>
+
+        {/* ANALYTICS */}
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => navigation.navigate("Analytics")}
+        >
+          <View style={styles.quickActionIcon}>
+            <Ionicons name="bar-chart" size={28} color="#10B981" />
+          </View>
+          <Text style={styles.quickActionTitle}>Analytics</Text>
+          <Text style={styles.quickActionSubtitle}>View reports</Text>
+        </TouchableOpacity>
+
+        {/* NOTIFICATIONS */}
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => {
+            Toast.show({
+              type: "success",
+              text1: "Notification Sent 📢",
+              text2: "All users have been notified!",
+            });
+          }}
+        >
+          <View style={styles.quickActionIcon}>
+            <Ionicons name="notifications" size={28} color="#F59E0B" />
+          </View>
+          <Text style={styles.quickActionTitle}>Notifications</Text>
+          <Text style={styles.quickActionSubtitle}>Send alerts</Text>
+        </TouchableOpacity>
+
+        {/* SETTINGS */}
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => {
+            setActiveTab("restaurant");
+          }}
+        >
+          <View style={styles.quickActionIcon}>
+            <Ionicons name="settings" size={28} color="#EF4444" />
+          </View>
+          <Text style={styles.quickActionTitle}>Settings</Text>
+          <Text style={styles.quickActionSubtitle}>Configure</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Order Status Overview */}
@@ -632,50 +659,94 @@ export default function AdminDashboard({ navigation }: Props) {
         </View>
         <View style={styles.statusGrid}>
           <View style={styles.statusCard}>
-            <View style={[styles.statusIndicator, { backgroundColor: '#10B981' }]} />
+            <View
+              style={[styles.statusIndicator, { backgroundColor: "#10B981" }]}
+            />
             <View style={styles.statusContent}>
-              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'delivered').length}</Text>
+              <Text style={styles.statusNumber}>
+                {orders.filter((o) => o.status === "delivered").length}
+              </Text>
               <Text style={styles.statusText}>Delivered</Text>
             </View>
             <View style={styles.statusPercentage}>
               <Text style={styles.percentageText}>
-                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'delivered').length / orders.length) * 100) : 0}%
+                {orders.length > 0
+                  ? Math.round(
+                      (orders.filter((o) => o.status === "delivered").length /
+                        orders.length) *
+                        100,
+                    )
+                  : 0}
+                %
               </Text>
             </View>
           </View>
           <View style={styles.statusCard}>
-            <View style={[styles.statusIndicator, { backgroundColor: '#F59E0B' }]} />
+            <View
+              style={[styles.statusIndicator, { backgroundColor: "#F59E0B" }]}
+            />
             <View style={styles.statusContent}>
-              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'preparing').length}</Text>
+              <Text style={styles.statusNumber}>
+                {orders.filter((o) => o.status === "preparing").length}
+              </Text>
               <Text style={styles.statusText}>Preparing</Text>
             </View>
             <View style={styles.statusPercentage}>
               <Text style={styles.percentageText}>
-                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'preparing').length / orders.length) * 100) : 0}%
+                {orders.length > 0
+                  ? Math.round(
+                      (orders.filter((o) => o.status === "preparing").length /
+                        orders.length) *
+                        100,
+                    )
+                  : 0}
+                %
               </Text>
             </View>
           </View>
           <View style={styles.statusCard}>
-            <View style={[styles.statusIndicator, { backgroundColor: '#6366F1' }]} />
+            <View
+              style={[styles.statusIndicator, { backgroundColor: "#6366F1" }]}
+            />
             <View style={styles.statusContent}>
-              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'ready').length}</Text>
+              <Text style={styles.statusNumber}>
+                {orders.filter((o) => o.status === "ready").length}
+              </Text>
               <Text style={styles.statusText}>Ready</Text>
             </View>
             <View style={styles.statusPercentage}>
               <Text style={styles.percentageText}>
-                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'ready').length / orders.length) * 100) : 0}%
+                {orders.length > 0
+                  ? Math.round(
+                      (orders.filter((o) => o.status === "ready").length /
+                        orders.length) *
+                        100,
+                    )
+                  : 0}
+                %
               </Text>
             </View>
           </View>
           <View style={styles.statusCard}>
-            <View style={[styles.statusIndicator, { backgroundColor: '#EF4444' }]} />
+            <View
+              style={[styles.statusIndicator, { backgroundColor: "#EF4444" }]}
+            />
             <View style={styles.statusContent}>
-              <Text style={styles.statusNumber}>{orders.filter(o => o.status === 'pending').length}</Text>
+              <Text style={styles.statusNumber}>
+                {orders.filter((o) => o.status === "pending").length}
+              </Text>
               <Text style={styles.statusText}>Pending</Text>
             </View>
             <View style={styles.statusPercentage}>
               <Text style={styles.percentageText}>
-                {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'pending').length / orders.length) * 100) : 0}%
+                {orders.length > 0
+                  ? Math.round(
+                      (orders.filter((o) => o.status === "pending").length /
+                        orders.length) *
+                        100,
+                    )
+                  : 0}
+                %
               </Text>
             </View>
           </View>
@@ -686,48 +757,93 @@ export default function AdminDashboard({ navigation }: Props) {
       <View style={styles.activitySection}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.activityList}>
-          {orders.length > 0 && orders.slice(-3).reverse().map((order, index) => (
-            <View key={order.id} style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: '#10B981' }]}>
-                <Ionicons name="checkmark" size={16} color={Colors.surface} />
+          {orders.length > 0 &&
+            orders
+              .slice(-3)
+              .reverse()
+              .map((order, index) => (
+                <View key={order.id} style={styles.activityItem}>
+                  <View
+                    style={[
+                      styles.activityIcon,
+                      { backgroundColor: "#10B981" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="checkmark"
+                      size={16}
+                      color={Colors.surface}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>New order placed</Text>
+                    <Text style={styles.activitySubtitle}>
+                      Order #{order.id} - R{order.totalAmount}.00
+                    </Text>
+                  </View>
+                  <Text style={styles.activityTime}>Just now</Text>
+                </View>
+              ))}
+          {users.length > 0 &&
+            users
+              .slice(-2)
+              .reverse()
+              .map((user, index) => (
+                <View key={user.id} style={styles.activityItem}>
+                  <View
+                    style={[
+                      styles.activityIcon,
+                      { backgroundColor: "#6366F1" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="person-add"
+                      size={16}
+                      color={Colors.surface}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>
+                      New customer registered
+                    </Text>
+                    <Text style={styles.activitySubtitle}>{user.email}</Text>
+                  </View>
+                  <Text style={styles.activityTime}>Just now</Text>
+                </View>
+              ))}
+          {foodItems.length > 0 &&
+            foodItems
+              .slice(-1)
+              .reverse()
+              .map((item, index) => (
+                <View key={item.id} style={styles.activityItem}>
+                  <View
+                    style={[
+                      styles.activityIcon,
+                      { backgroundColor: "#F59E0B" },
+                    ]}
+                  >
+                    <Ionicons name="star" size={16} color={Colors.surface} />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>
+                      New menu item added
+                    </Text>
+                    <Text style={styles.activitySubtitle}>{item.name}</Text>
+                  </View>
+                  <Text style={styles.activityTime}>Just now</Text>
+                </View>
+              ))}
+          {orders.length === 0 &&
+            users.length === 0 &&
+            foodItems.length === 0 && (
+              <View style={styles.emptyActivity}>
+                <Text style={styles.emptyActivityText}>No recent activity</Text>
+                <Text style={styles.emptyActivitySubtext}>
+                  Activity will appear here when users interact with the app
+                </Text>
               </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>New order placed</Text>
-                <Text style={styles.activitySubtitle}>Order #{order.id} - R{order.totalAmount}.00</Text>
-              </View>
-              <Text style={styles.activityTime}>Just now</Text>
-            </View>
-          ))}
-          {users.length > 0 && users.slice(-2).reverse().map((user, index) => (
-            <View key={user.id} style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: '#6366F1' }]}>
-                <Ionicons name="person-add" size={16} color={Colors.surface} />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>New customer registered</Text>
-                <Text style={styles.activitySubtitle}>{user.email}</Text>
-              </View>
-              <Text style={styles.activityTime}>Just now</Text>
-            </View>
-          ))}
-          {foodItems.length > 0 && foodItems.slice(-1).reverse().map((item, index) => (
-            <View key={item.id} style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: '#F59E0B' }]}>
-                <Ionicons name="star" size={16} color={Colors.surface} />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>New menu item added</Text>
-                <Text style={styles.activitySubtitle}>{item.name}</Text>
-              </View>
-              <Text style={styles.activityTime}>Just now</Text>
-            </View>
-          ))}
-          {orders.length === 0 && users.length === 0 && foodItems.length === 0 && (
-            <View style={styles.emptyActivity}>
-              <Text style={styles.emptyActivityText}>No recent activity</Text>
-              <Text style={styles.emptyActivitySubtext}>Activity will appear here when users interact with the app</Text>
-            </View>
-          )}
+            )}
         </View>
       </View>
     </ScrollView>
