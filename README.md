@@ -62,6 +62,12 @@ Reset project (clear caches and rebuild):
 npm run reset-project
 ```
 
+## Admin Login details
+* email : admin@foodie.com
+* password : admin123
+
+
+
 ## Project Structure
 ```
 reactnativerestaurantapp/
